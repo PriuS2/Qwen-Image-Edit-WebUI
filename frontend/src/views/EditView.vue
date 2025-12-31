@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useEditStore } from '@/stores/edit'
+import { useEditStore, type ImageItem } from '@/stores/edit'
 import { useHistoryStore } from '@/stores/history'
 import ImageUploader from '@/components/common/ImageUploader.vue'
 import ImagePreview from '@/components/common/ImagePreview.vue'
@@ -29,6 +29,11 @@ const showProgress = computed(() =>
   (editStore.jobStatus && editStore.jobStatus.status !== 'completed')
 )
 
+// Edit mode text
+const editModeText = computed(() => 
+  editStore.isMultiMode ? 'Multi 모드 (이미지 합성)' : 'Single 모드 (이미지 편집)'
+)
+
 // Handlers
 const handleImageChange = (file: File | null) => {
   if (file) {
@@ -36,6 +41,14 @@ const handleImageChange = (file: File | null) => {
   } else {
     editStore.clearImage()
   }
+}
+
+const handleAddImages = (files: File[]) => {
+  editStore.addImages(files)
+}
+
+const handleRemoveImage = (id: string) => {
+  editStore.removeImage(id)
 }
 
 const handleSubmit = async () => {
@@ -70,17 +83,25 @@ const handleClear = () => {
 
 <template>
   <div class="edit-view">
-    <h2 class="page-title">이미지 편집</h2>
+    <div class="page-header">
+      <h2 class="page-title">이미지 편집</h2>
+      <span v-if="editStore.hasImage" class="mode-indicator" :class="editStore.isMultiMode ? 'multi' : 'single'">
+        {{ editModeText }}
+      </span>
+    </div>
 
     <!-- Image Preview Area -->
     <div class="image-grid">
-      <!-- Original Image -->
+      <!-- Original Images (Multi-image uploader) -->
       <div class="card">
-        <h3 class="card-title">원본 이미지</h3>
+        <h3 class="card-title">입력 이미지 (최대 3장)</h3>
         <ImageUploader
-          :preview-url="editStore.currentImageUrl"
+          :multiple="true"
+          :images="editStore.images"
+          :max-images="editStore.maxImages"
           :disabled="editStore.isProcessing"
-          @change="handleImageChange"
+          @add="handleAddImages"
+          @remove="handleRemoveImage"
         />
       </div>
 
@@ -175,11 +196,34 @@ const handleClear = () => {
   margin: 0 auto;
 }
 
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
 .page-title {
   font-size: 1.5rem;
   font-weight: 700;
   color: #1f2937;
-  margin-bottom: 1.5rem;
+}
+
+.mode-indicator {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+}
+
+.mode-indicator.single {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.mode-indicator.multi {
+  background-color: #fce7f3;
+  color: #be185d;
 }
 
 .image-grid {

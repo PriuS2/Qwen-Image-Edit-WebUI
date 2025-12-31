@@ -4,10 +4,21 @@ import { editApi, createJobProgressSocket, type JobProgressWebSocket } from '@/a
 import type { EditParams, JobStatus, JobResult, StyleType, ProgressMessage } from '@/types'
 import { ElMessage } from 'element-plus'
 
+export interface ImageItem {
+  file: File
+  url: string
+  id: string
+}
+
 export const useEditStore = defineStore('edit', () => {
   // State
   const currentImage = ref<File | null>(null)
   const currentImageUrl = ref<string | null>(null)
+  
+  // Multi-image state
+  const images = ref<ImageItem[]>([])
+  const maxImages = ref<number>(3)
+  
   const resultImage = ref<string | null>(null)
   const jobId = ref<string | null>(null)
   const jobStatus = ref<JobStatus | null>(null)
@@ -31,19 +42,27 @@ export const useEditStore = defineStore('edit', () => {
   let wsConnection: JobProgressWebSocket | null = null
 
   // Getters
-  const hasImage = computed(() => !!currentImage.value || !!currentImageUrl.value)
+  const hasImage = computed(() => images.value.length > 0)
   const canEdit = computed(() => hasImage.value && !!params.value.prompt && !isProcessing.value)
   const lastResult = computed(() => jobStatus.value?.result ?? null)
+  
+  // Multi-image mode detection
+  const isMultiMode = computed(() => images.value.length > 1)
+  const imageCount = computed(() => images.value.length)
 
   // Actions
   function setImage(file: File): void {
-    currentImage.value = file
-    currentImageUrl.value = URL.createObjectURL(file)
-    resultImage.value = null
-    error.value = null
+    // Clear existing images and add new one (single image mode compatibility)
+    clearImage()
+    addImages([file])
   }
 
   function clearImage(): void {
+    // Revoke all URLs
+    images.value.forEach(img => URL.revokeObjectURL(img.url))
+    images.value = []
+    
+    // Legacy single image state
     if (currentImageUrl.value) {
       URL.revokeObjectURL(currentImageUrl.value)
     }
@@ -51,6 +70,46 @@ export const useEditStore = defineStore('edit', () => {
     currentImageUrl.value = null
     resultImage.value = null
     error.value = null
+  }
+
+  function addImages(files: File[]): void {
+    const remaining = maxImages.value - images.value.length
+    const toAdd = files.slice(0, remaining)
+    
+    toAdd.forEach(file => {
+      const id = `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      images.value.push({
+        file,
+        url: URL.createObjectURL(file),
+        id
+      })
+    })
+    
+    // Update legacy state for first image
+    if (images.value.length > 0) {
+      currentImage.value = images.value[0].file
+      currentImageUrl.value = images.value[0].url
+    }
+    
+    resultImage.value = null
+    error.value = null
+  }
+
+  function removeImage(id: string): void {
+    const index = images.value.findIndex(img => img.id === id)
+    if (index !== -1) {
+      URL.revokeObjectURL(images.value[index].url)
+      images.value.splice(index, 1)
+    }
+    
+    // Update legacy state
+    if (images.value.length > 0) {
+      currentImage.value = images.value[0].file
+      currentImageUrl.value = images.value[0].url
+    } else {
+      currentImage.value = null
+      currentImageUrl.value = null
+    }
   }
 
   function updateParams(newParams: Partial<EditParams>): void {
@@ -70,7 +129,7 @@ export const useEditStore = defineStore('edit', () => {
   }
 
   async function submitEdit(): Promise<boolean> {
-    if (!currentImage.value) {
+    if (images.value.length === 0) {
       ElMessage.warning('이미지를 먼저 업로드해주세요.')
       return false
     }
@@ -85,19 +144,37 @@ export const useEditStore = defineStore('edit', () => {
     progress.value = 0
 
     try {
-      const response = await editApi.editSingleUpload(
-        currentImage.value,
-        params.value,
-        {
-          response_format: 'url',
-          session_id: sessionId.value,
-          save_to_gallery: true
-        }
-      )
+      let response
+      
+      if (images.value.length === 1) {
+        // Single image mode
+        response = await editApi.editSingleUpload(
+          images.value[0].file,
+          params.value,
+          {
+            response_format: 'url',
+            session_id: sessionId.value,
+            save_to_gallery: true
+          }
+        )
+      } else {
+        // Multi image mode
+        const files = images.value.map(img => img.file)
+        response = await editApi.editMultiUpload(
+          files,
+          params.value,
+          {
+            response_format: 'url',
+            session_id: sessionId.value,
+            save_to_gallery: true
+          }
+        )
+      }
 
       if (response.success) {
         jobId.value = response.job_id
         connectWebSocket(response.job_id)
+        ElMessage.info(images.value.length > 1 ? 'Multi 모드로 편집 시작...' : 'Single 모드로 편집 시작...')
         return true
       }
       return false
@@ -244,6 +321,8 @@ export const useEditStore = defineStore('edit', () => {
     // State
     currentImage,
     currentImageUrl,
+    images,
+    maxImages,
     resultImage,
     jobId,
     jobStatus,
@@ -256,9 +335,13 @@ export const useEditStore = defineStore('edit', () => {
     hasImage,
     canEdit,
     lastResult,
+    isMultiMode,
+    imageCount,
     // Actions
     setImage,
     clearImage,
+    addImages,
+    removeImage,
     updateParams,
     resetParams,
     submitEdit,
