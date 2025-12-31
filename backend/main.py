@@ -15,11 +15,12 @@ from db.database import init_db, close_db
 from core.settings_manager import get_settings_manager
 from core.model_manager import get_model_manager
 from core.queue_manager import get_queue_manager
-from api.routes import auth, model, edit, batch, history, gallery, settings
+from api.routes import auth, model, edit, batch, history, gallery
+from api.routes import settings as settings_routes
 from api.websocket import router as websocket_router
 
 
-settings = get_settings()
+app_settings = get_settings()
 
 
 @asynccontextmanager
@@ -32,10 +33,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # ═══════════════════════════════════════════════════════════════
     # 시작 시 초기화
     # ═══════════════════════════════════════════════════════════════
-    print(f"🚀 Starting {settings.app_name} v{settings.app_version}")
+    print(f"🚀 Starting {app_settings.app_name} v{app_settings.app_version}")
     
     # 디렉토리 생성
-    settings.ensure_directories()
+    app_settings.ensure_directories()
     
     # 데이터베이스 초기화
     await init_db()
@@ -55,8 +56,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     asyncio.create_task(settings_manager.start_auto_unload_timer())
     print("✅ Auto-unload timer started")
     
-    print(f"🌐 Server running at http://{settings.host}:{settings.port}")
-    print(f"📚 API docs at http://{settings.host}:{settings.port}/docs")
+    print(f"🌐 Server running at http://{app_settings.host}:{app_settings.port}")
+    print(f"📚 API docs at http://{app_settings.host}:{app_settings.port}/docs")
     
     yield
     
@@ -86,8 +87,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 # FastAPI 앱 생성
 # ═══════════════════════════════════════════════════════════════
 app = FastAPI(
-    title=settings.app_name,
-    version=settings.app_version,
+    title=app_settings.app_name,
+    version=app_settings.app_version,
     description="Qwen-Image-Edit-2511 기반 이미지 편집 API",
     lifespan=lifespan,
     docs_url="/docs",
@@ -99,7 +100,7 @@ app = FastAPI(
 # ═══════════════════════════════════════════════════════════════
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=app_settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -110,7 +111,7 @@ app.add_middleware(
 # ═══════════════════════════════════════════════════════════════
 app.mount(
     "/storage",
-    StaticFiles(directory=str(settings.storage_dir)),
+    StaticFiles(directory=str(app_settings.storage_dir)),
     name="storage"
 )
 
@@ -123,7 +124,7 @@ app.include_router(edit.router, prefix="/api/edit", tags=["이미지 편집"])
 app.include_router(batch.router, prefix="/api/batch", tags=["배치 처리"])
 app.include_router(history.router, prefix="/api/history", tags=["히스토리"])
 app.include_router(gallery.router, prefix="/api/gallery", tags=["갤러리"])
-app.include_router(settings.router, prefix="/api/settings", tags=["설정"])
+app.include_router(settings_routes.router, prefix="/api/settings", tags=["Settings"])
 app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
 
 
@@ -134,8 +135,8 @@ app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
 async def root():
     """API 루트 - 헬스 체크"""
     return {
-        "name": settings.app_name,
-        "version": settings.app_version,
+        "name": app_settings.app_name,
+        "version": app_settings.app_version,
         "status": "running"
     }
 
@@ -148,7 +149,7 @@ async def health_check():
     return {
         "status": "healthy",
         "model_loaded": model_manager.is_loaded,
-        "version": settings.app_version
+        "version": app_settings.app_version
     }
 
 
@@ -160,8 +161,8 @@ if __name__ == "__main__":
     
     uvicorn.run(
         "main:app",
-        host=settings.host,
-        port=settings.port,
-        reload=settings.debug
+        host=app_settings.host,
+        port=app_settings.port,
+        reload=app_settings.debug
     )
 
