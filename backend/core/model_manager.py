@@ -1,18 +1,21 @@
 """
 모델 관리자 모듈
 - 모델 로드/언로드
+- 모델 다운로드
 - 안전한 메모리 해제
 - GPU 상태 모니터링
 - 자동 로드 지원
 """
 
 import gc
+import os
 import asyncio
-from typing import Optional, Any
+from typing import Optional, Any, Callable, List
 from datetime import datetime
+from pathlib import Path
 
 from schemas.settings import OptimizationSettings
-from schemas.model import ModelStatus
+from schemas.model import ModelStatus, ModelDownloadProgress, DownloadStatus
 from core.optimization import apply_optimizations, get_torch_dtype
 
 
@@ -36,6 +39,16 @@ class ModelManager:
             self._optimization: Optional[OptimizationSettings] = None
             self._loading: bool = False
             self._load_lock = asyncio.Lock()
+            
+            # 다운로드 관련
+            self._download_progress: ModelDownloadProgress = ModelDownloadProgress(
+                status=DownloadStatus.IDLE
+            )
+            self._downloading: bool = False
+            self._download_lock = asyncio.Lock()
+            self._download_cancelled: bool = False
+            self._progress_callbacks: List[Callable[[ModelDownloadProgress], None]] = []
+            
             ModelManager._initialized = True
     
     @property
@@ -47,6 +60,16 @@ class ModelManager:
     def is_loading(self) -> bool:
         """모델 로딩 중 여부"""
         return self._loading
+    
+    @property
+    def is_downloading(self) -> bool:
+        """모델 다운로드 중 여부"""
+        return self._downloading
+    
+    @property
+    def download_progress(self) -> ModelDownloadProgress:
+        """다운로드 진행 상황"""
+        return self._download_progress
     
     @property
     def pipeline(self) -> Optional[Any]:
@@ -257,6 +280,251 @@ class ModelManager:
         except Exception as e:
             print(f"❌ Auto-load failed: {e}")
             return False
+    
+    def add_progress_callback(self, callback: Callable[[ModelDownloadProgress], None]):
+        """다운로드 진행 상황 콜백 추가"""
+        self._progress_callbacks.append(callback)
+    
+    def remove_progress_callback(self, callback: Callable[[ModelDownloadProgress], None]):
+        """다운로드 진행 상황 콜백 제거"""
+        if callback in self._progress_callbacks:
+            self._progress_callbacks.remove(callback)
+    
+    def _notify_progress(self):
+        """진행 상황 콜백 호출"""
+        for callback in self._progress_callbacks:
+            try:
+                callback(self._download_progress)
+            except Exception:
+                pass
+    
+    def _update_progress(
+        self,
+        status: Optional[DownloadStatus] = None,
+        progress_percent: Optional[float] = None,
+        downloaded_size_mb: Optional[float] = None,
+        total_size_mb: Optional[float] = None,
+        current_file: Optional[str] = None,
+        files_completed: Optional[int] = None,
+        files_total: Optional[int] = None,
+        error_message: Optional[str] = None,
+    ):
+        """다운로드 진행 상황 업데이트"""
+        if status is not None:
+            self._download_progress.status = status
+        if progress_percent is not None:
+            self._download_progress.progress_percent = progress_percent
+        if downloaded_size_mb is not None:
+            self._download_progress.downloaded_size_mb = downloaded_size_mb
+        if total_size_mb is not None:
+            self._download_progress.total_size_mb = total_size_mb
+        if current_file is not None:
+            self._download_progress.current_file = current_file
+        if files_completed is not None:
+            self._download_progress.files_completed = files_completed
+        if files_total is not None:
+            self._download_progress.files_total = files_total
+        if error_message is not None:
+            self._download_progress.error_message = error_message
+        
+        self._notify_progress()
+    
+    def is_model_downloaded(self, model_name: str) -> bool:
+        """모델이 이미 다운로드되어 있는지 확인"""
+        try:
+            from huggingface_hub import HfApi, hf_hub_download
+            from huggingface_hub.utils import LocalEntryNotFoundError
+            
+            api = HfApi()
+            
+            # 캐시 디렉토리 확인
+            cache_dir = os.environ.get("HF_HOME", os.path.expanduser("~/.cache/huggingface"))
+            hub_cache = Path(cache_dir) / "hub"
+            
+            # 모델 디렉토리 형식: models--owner--model_name
+            model_dir_name = f"models--{model_name.replace('/', '--')}"
+            model_path = hub_cache / model_dir_name
+            
+            if model_path.exists():
+                # snapshots 디렉토리에 파일이 있는지 확인
+                snapshots = model_path / "snapshots"
+                if snapshots.exists() and any(snapshots.iterdir()):
+                    return True
+            
+            return False
+        except Exception:
+            return False
+    
+    async def download_model(
+        self,
+        model_name: str = "ovedrive/Qwen-Image-Edit-2511-4bit",
+        force_download: bool = False,
+    ) -> ModelDownloadProgress:
+        """
+        모델 다운로드
+        
+        Args:
+            model_name: Hugging Face 모델 ID
+            force_download: 이미 존재해도 다시 다운로드
+        
+        Returns:
+            ModelDownloadProgress: 다운로드 완료 후 상태
+        """
+        async with self._download_lock:
+            if self._downloading:
+                return self._download_progress
+            
+            # 이미 다운로드된 경우
+            if not force_download and self.is_model_downloaded(model_name):
+                self._download_progress = ModelDownloadProgress(
+                    status=DownloadStatus.COMPLETED,
+                    model_name=model_name,
+                    progress_percent=100,
+                )
+                return self._download_progress
+            
+            self._downloading = True
+            self._download_cancelled = False
+            self._download_progress = ModelDownloadProgress(
+                status=DownloadStatus.DOWNLOADING,
+                model_name=model_name,
+            )
+            
+            try:
+                print(f"📥 Starting download: {model_name}")
+                
+                # 비동기로 다운로드 실행
+                loop = asyncio.get_event_loop()
+                await loop.run_in_executor(
+                    None,
+                    self._download_model_sync,
+                    model_name,
+                    force_download,
+                )
+                
+                if self._download_cancelled:
+                    self._update_progress(status=DownloadStatus.CANCELLED)
+                    print(f"⚠️ Download cancelled: {model_name}")
+                else:
+                    self._update_progress(
+                        status=DownloadStatus.COMPLETED,
+                        progress_percent=100,
+                    )
+                    print(f"✅ Download completed: {model_name}")
+                
+                return self._download_progress
+                
+            except Exception as e:
+                error_msg = str(e)
+                print(f"❌ Download failed: {error_msg}")
+                self._update_progress(
+                    status=DownloadStatus.FAILED,
+                    error_message=error_msg,
+                )
+                return self._download_progress
+                
+            finally:
+                self._downloading = False
+    
+    def _download_model_sync(self, model_name: str, force_download: bool):
+        """동기 모델 다운로드 (별도 스레드에서 실행)"""
+        from huggingface_hub import snapshot_download, HfApi
+        from huggingface_hub.utils import tqdm as hf_tqdm
+        import threading
+        
+        api = HfApi()
+        
+        try:
+            # 모델 정보 가져오기
+            model_info = api.model_info(model_name)
+            siblings = model_info.siblings or []
+            
+            # 다운로드할 파일 목록
+            files_to_download = [s.rfilename for s in siblings if s.rfilename]
+            total_files = len(files_to_download)
+            
+            self._update_progress(
+                files_total=total_files,
+                files_completed=0,
+            )
+            
+            # 전체 크기 계산 (가능한 경우)
+            total_size = sum(
+                getattr(s, 'size', 0) or 0
+                for s in siblings
+            )
+            if total_size > 0:
+                self._update_progress(total_size_mb=total_size / (1024 * 1024))
+            
+        except Exception as e:
+            print(f"⚠️ Could not get model info: {e}")
+            total_files = 0
+        
+        # 커스텀 진행 상황 추적
+        downloaded_bytes = 0
+        files_completed = 0
+        current_file_lock = threading.Lock()
+        
+        def progress_callback(progress):
+            nonlocal downloaded_bytes, files_completed
+            
+            if self._download_cancelled:
+                raise InterruptedError("Download cancelled")
+            
+            with current_file_lock:
+                # 진행률 업데이트
+                if hasattr(progress, 'n') and hasattr(progress, 'total'):
+                    if progress.total and progress.total > 0:
+                        percent = (progress.n / progress.total) * 100
+                        self._update_progress(
+                            progress_percent=min(percent, 99.9),
+                            downloaded_size_mb=progress.n / (1024 * 1024),
+                        )
+        
+        # snapshot_download 사용
+        try:
+            cache_dir = snapshot_download(
+                repo_id=model_name,
+                force_download=force_download,
+                resume_download=True,
+            )
+            print(f"📁 Model cached at: {cache_dir}")
+            
+        except InterruptedError:
+            raise
+        except Exception as e:
+            raise Exception(f"Download failed: {str(e)}")
+    
+    def cancel_download(self):
+        """다운로드 취소"""
+        if self._downloading:
+            self._download_cancelled = True
+            print("⚠️ Download cancellation requested")
+    
+    def get_available_models(self) -> list:
+        """사용 가능한 모델 목록 반환"""
+        models = [
+            {
+                "model_id": "ovedrive/Qwen-Image-Edit-2511-4bit",
+                "name": "Qwen Image Edit 4-bit (권장)",
+                "description": "4비트 양자화 버전으로 낮은 VRAM 사용량",
+                "size_gb": 8.0,
+                "is_recommended": True,
+            },
+            {
+                "model_id": "Qwen/Qwen-Image-Edit-2511",
+                "name": "Qwen Image Edit (원본)",
+                "description": "원본 모델, 높은 품질이지만 더 많은 VRAM 필요",
+                "size_gb": 30.0,
+                "is_recommended": False,
+            },
+        ]
+        
+        # 다운로드 여부 확인
+        for model in models:
+            model["is_downloaded"] = self.is_model_downloaded(model["model_id"])
+        
+        return models
 
 
 # 싱글톤 인스턴스 접근자
