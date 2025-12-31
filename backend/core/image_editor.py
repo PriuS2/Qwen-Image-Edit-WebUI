@@ -84,7 +84,7 @@ class ImageEditor:
         
         # 진행률 시작
         if progress_callback:
-            progress_callback(0)
+            await _safe_progress_callback(progress_callback, 0)
         
         # 이미지 로드
         image = get_image_from_source(image_source)
@@ -94,7 +94,7 @@ class ImageEditor:
         
         # 이미지 로드 완료, 편집 시작 준비
         if progress_callback:
-            progress_callback(5)
+            await _safe_progress_callback(progress_callback, 5)
         
         # 편집 실행
         result_image = await self._run_pipeline(
@@ -147,7 +147,7 @@ class ImageEditor:
         
         # 진행률 시작
         if progress_callback:
-            progress_callback(0)
+            await _safe_progress_callback(progress_callback, 0)
         
         # 이미지들 로드
         images = [get_image_from_source(src) for src in image_sources[:3]]
@@ -157,7 +157,7 @@ class ImageEditor:
         
         # 이미지 로드 완료, 편집 시작 준비
         if progress_callback:
-            progress_callback(5)
+            await _safe_progress_callback(progress_callback, 5)
         
         # 편집 실행
         result_image = await self._run_pipeline(
@@ -293,19 +293,9 @@ class ImageEditor:
         result = await loop.run_in_executor(None, run_inference)
         
         if progress_callback:
-            progress_callback(85)
+            await _safe_progress_callback(progress_callback, 85)
         
         return result
-
-
-async def _safe_progress_callback(callback: Callable[[int], None], progress: int) -> None:
-    """진행률 콜백을 안전하게 호출"""
-    try:
-        result = callback(progress)
-        if asyncio.iscoroutine(result):
-            await result
-    except Exception as e:
-        print(f"Progress callback error: {e}")
     
     async def _save_and_return(
         self,
@@ -379,7 +369,7 @@ async def _safe_progress_callback(callback: Callable[[int], None], progress: int
                     await db.commit()
         
         if progress_callback:
-            progress_callback(100)
+            await _safe_progress_callback(progress_callback, 100)
         
         # 응답 형식에 따라 반환
         if response_format == "base64":
@@ -396,6 +386,16 @@ async def _safe_progress_callback(callback: Callable[[int], None], progress: int
             gallery_id=gallery_id,
             history_id=history_id,
         )
+
+
+async def _safe_progress_callback(callback: Callable[[int], None], progress: int) -> None:
+    """진행률 콜백을 안전하게 호출"""
+    try:
+        result = callback(progress)
+        if asyncio.iscoroutine(result):
+            await result
+    except Exception as e:
+        print(f"Progress callback error: {e}")
 
 
 # 싱글톤
