@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Storage (이미지 파일)
+storage/images/
+storage/thumbnails/
+storage/temp/
+storage/uploads/
+*.db
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PyTorch / ML
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# HuggingFace cache (optional - 캐시는 보통 사용자 홈 디렉토리에 저장됨)
+# models/
+
