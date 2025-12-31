@@ -234,20 +234,30 @@ export const useEditStore = defineStore('edit', () => {
         console.log('[EditStore] WebSocket message:', message)
         
         progress.value = message.progress
+        
+        // Determine status: use message.status if available, or infer from progress/result
+        const inferredStatus = message.status || 
+          (message.progress === 100 && message.result ? 'completed' : 
+           message.error ? 'failed' : 'processing')
+        
         jobStatus.value = {
           job_id: message.job_id,
-          status: message.status,
+          status: inferredStatus,
           progress: message.progress,
           result: message.result,
           error: message.error
         }
 
-        if (message.status === 'completed' && message.result) {
+        // Check for completion: explicit status OR (progress 100% with result)
+        const isCompleted = message.status === 'completed' || 
+          (message.progress === 100 && message.result)
+        
+        if (isCompleted && message.result) {
           console.log('[EditStore] Completed! Result image:', message.result.image)
           resultImage.value = message.result.image
           isProcessing.value = false
           ElMessage.success('이미지 편집이 완료되었습니다.')
-        } else if (message.status === 'failed') {
+        } else if (message.status === 'failed' || message.error) {
           error.value = message.error || '편집 실패'
           isProcessing.value = false
           ElMessage.error(error.value)
@@ -295,13 +305,17 @@ export const useEditStore = defineStore('edit', () => {
         progress.value = status.progress
         jobStatus.value = status
 
-        if (status.status === 'completed' && status.result) {
+        // Check for completion: explicit status OR (progress 100% with result)
+        const isCompleted = status.status === 'completed' || 
+          (status.progress === 100 && status.result)
+
+        if (isCompleted && status.result) {
           console.log('[EditStore] Polling completed! Result image:', status.result.image)
           resultImage.value = status.result.image
           isProcessing.value = false
           ElMessage.success('이미지 편집이 완료되었습니다.')
           stopPolling()
-        } else if (status.status === 'failed') {
+        } else if (status.status === 'failed' || status.error) {
           error.value = status.error || '편집 실패'
           isProcessing.value = false
           ElMessage.error(error.value)
