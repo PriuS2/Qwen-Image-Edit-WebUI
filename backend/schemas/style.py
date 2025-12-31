@@ -166,4 +166,14 @@ DEFAULT_STYLE_PRESETS = [
         "is_builtin": True,
         "sort_order": 9,
     },
+    {
+        "name": "photo_restoration",
+        "label": "Photo Restore",
+        "description": "사진 복원",
+        "icon": "🔧",
+        "prompt": "Restore and enhance this old or damaged photograph to pristine condition. Remove scratches, dust spots, stains, creases, and tears. Fix faded colors and restore proper contrast and brightness. Sharpen blurry areas while preserving natural film grain. Repair missing or damaged portions seamlessly. Enhance facial details and skin tones naturally. Maintain the original era's photographic characteristics while dramatically improving overall quality.",
+        "negative_prompt": "artificial looking, over-processed, plastic skin, unnatural colors, cartoon, anime, painting, artistic filter, HDR effect, oversaturated, blur, noise, artifacts",
+        "is_builtin": True,
+        "sort_order": 10,
+    },
 ]
