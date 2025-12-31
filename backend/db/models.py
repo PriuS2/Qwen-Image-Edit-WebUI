@@ -142,3 +142,42 @@ class Setting(Base):
     def __repr__(self) -> str:
         return f"<Setting(key={self.key})>"
 
+
+class StylePreset(Base):
+    """스타일 프리셋 테이블"""
+    
+    __tablename__ = "style_presets"
+    
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    name = Column(String(50), nullable=False, unique=True, index=True)  # 스타일 ID (예: ghibli, anime)
+    label = Column(String(100), nullable=False)  # 표시 이름
+    description = Column(String(200), nullable=True)  # 설명 (한국어)
+    icon = Column(String(10), nullable=False, default="🎨")  # 이모지 아이콘
+    prompt = Column(Text, nullable=False)  # 스타일 프롬프트
+    negative_prompt = Column(Text, nullable=True, default="")  # 네거티브 프롬프트
+    is_builtin = Column(Boolean, default=False)  # 기본 제공 스타일 여부
+    is_enabled = Column(Boolean, default=True)  # 활성화 여부
+    sort_order = Column(Integer, default=0)  # 정렬 순서
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self) -> str:
+        return f"<StylePreset(name={self.name}, label={self.label})>"
+    
+    def to_dict(self) -> dict:
+        """딕셔너리 변환"""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "label": self.label,
+            "description": self.description,
+            "icon": self.icon,
+            "prompt": self.prompt,
+            "negative_prompt": self.negative_prompt,
+            "is_builtin": self.is_builtin,
+            "is_enabled": self.is_enabled,
+            "sort_order": self.sort_order,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+

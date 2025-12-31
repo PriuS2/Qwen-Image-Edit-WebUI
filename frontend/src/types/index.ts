@@ -74,15 +74,45 @@ export interface StyleTransferRequest {
   save_to_gallery?: boolean
 }
 
-export type StyleType = 
-  | 'ghibli' 
-  | 'anime' 
-  | 'realistic' 
-  | 'oil_painting' 
-  | 'watercolor' 
-  | 'sketch' 
-  | 'cyberpunk' 
-  | 'vintage'
+export type StyleType = string  // 동적 스타일 지원
+
+// 스타일 프리셋 타입
+export interface StylePreset {
+  id: string
+  name: string
+  label: string
+  description: string | null
+  icon: string
+  prompt: string
+  negative_prompt: string
+  is_builtin: boolean
+  is_enabled: boolean
+  sort_order: number
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface StylePresetCreate {
+  name: string
+  label: string
+  description?: string
+  icon?: string
+  prompt: string
+  negative_prompt?: string
+  is_enabled?: boolean
+  sort_order?: number
+}
+
+export interface StylePresetUpdate {
+  name?: string
+  label?: string
+  description?: string
+  icon?: string
+  prompt?: string
+  negative_prompt?: string
+  is_enabled?: boolean
+  sort_order?: number
+}
 
 export interface JobStatus {
   job_id: string

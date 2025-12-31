@@ -1,57 +1,88 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { StyleType } from '@/types'
+import { ref, computed, onMounted } from 'vue'
+import { stylesApi } from '@/api'
+import type { StylePreset } from '@/types'
 
 const props = defineProps<{
-  modelValue: StyleType | null
+  modelValue: string | null
   disabled?: boolean
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: StyleType): void
+  (e: 'update:modelValue', value: string): void
 }>()
 
-interface StyleOption {
-  value: StyleType
-  label: string
-  description: string
-  icon: string
-}
-
-const styles: StyleOption[] = [
-  { value: 'ghibli', label: 'Ghibli', description: '지브리 스타일', icon: '🏯' },
-  { value: 'anime', label: 'Anime', description: '애니메이션', icon: '🎌' },
-  { value: 'realistic', label: 'Realistic', description: '사실적', icon: '📷' },
-  { value: 'oil_painting', label: 'Oil Paint', description: '유화', icon: '🎨' },
-  { value: 'watercolor', label: 'Watercolor', description: '수채화', icon: '💧' },
-  { value: 'sketch', label: 'Sketch', description: '스케치', icon: '✏️' },
-  { value: 'cyberpunk', label: 'Cyberpunk', description: '사이버펑크', icon: '🤖' },
-  { value: 'vintage', label: 'Vintage', description: '빈티지', icon: '📼' }
-]
+// 동적으로 로드되는 스타일 목록
+const styles = ref<StylePreset[]>([])
+const isLoading = ref(false)
+const error = ref<string | null>(null)
 
 const selectedStyle = computed(() => props.modelValue)
 
-const selectStyle = (style: StyleType) => {
+const selectStyle = (styleName: string) => {
   if (!props.disabled) {
-    emit('update:modelValue', style)
+    emit('update:modelValue', styleName)
   }
 }
+
+const loadStyles = async () => {
+  isLoading.value = true
+  error.value = null
+  
+  try {
+    const response = await stylesApi.getAll(true) // enabled_only=true
+    if (response.success && response.data) {
+      styles.value = response.data
+    }
+  } catch (err) {
+    console.error('Failed to load styles:', err)
+    error.value = '스타일 로드 실패'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 스타일 목록 새로고침 (외부에서 호출 가능)
+const refresh = () => {
+  loadStyles()
+}
+
+onMounted(() => {
+  loadStyles()
+})
+
+// 외부에서 접근 가능하도록 expose
+defineExpose({ refresh })
 </script>
 
 <template>
   <div class="style-selector">
     <label class="label">스타일 선택</label>
-    <div class="style-grid">
+    
+    <div v-if="isLoading" class="loading-state">
+      <el-skeleton :rows="2" animated />
+    </div>
+    
+    <div v-else-if="error" class="error-state">
+      <p>{{ error }}</p>
+      <el-button size="small" @click="loadStyles">다시 시도</el-button>
+    </div>
+    
+    <div v-else-if="styles.length === 0" class="empty-state">
+      <p>등록된 스타일이 없습니다.</p>
+    </div>
+    
+    <div v-else class="style-grid">
       <button
         v-for="style in styles"
-        :key="style.value"
+        :key="style.id"
         class="style-card"
         :class="{ 
-          'is-selected': selectedStyle === style.value,
+          'is-selected': selectedStyle === style.name,
           'is-disabled': disabled
         }"
         :disabled="disabled"
-        @click="selectStyle(style.value)"
+        @click="selectStyle(style.name)"
       >
         <span class="style-icon">{{ style.icon }}</span>
         <span class="style-label">{{ style.label }}</span>
@@ -77,6 +108,19 @@ const selectStyle = (style: StyleType) => {
   color: #374151;
 }
 
+.loading-state,
+.error-state,
+.empty-state {
+  padding: 1rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.error-state p,
+.empty-state p {
+  margin-bottom: 0.5rem;
+}
+
 .style-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -86,6 +130,12 @@ const selectStyle = (style: StyleType) => {
 @media (min-width: 640px) {
   .style-grid {
     grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .style-grid {
+    grid-template-columns: repeat(5, 1fr);
   }
 }
 

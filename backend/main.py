@@ -15,7 +15,7 @@ from db.database import init_db, close_db
 from core.settings_manager import get_settings_manager
 from core.model_manager import get_model_manager
 from core.queue_manager import get_queue_manager
-from api.routes import auth, model, edit, batch, history, gallery
+from api.routes import auth, model, edit, batch, history, gallery, styles
 from api.routes import settings as settings_routes
 from api.websocket import router as websocket_router
 
@@ -55,6 +55,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # 자동 언로드 타이머 시작
     asyncio.create_task(settings_manager.start_auto_unload_timer())
     print("✅ Auto-unload timer started")
+    
+    # 기본 스타일 프리셋 초기화
+    await styles.initialize_default_styles()
+    print("✅ Style presets initialized")
     
     print(f"🌐 Server running at http://{app_settings.host}:{app_settings.port}")
     print(f"📚 API docs at http://{app_settings.host}:{app_settings.port}/docs")
@@ -125,6 +129,7 @@ app.include_router(batch.router, prefix="/api/batch", tags=["배치 처리"])
 app.include_router(history.router, prefix="/api/history", tags=["히스토리"])
 app.include_router(gallery.router, prefix="/api/gallery", tags=["갤러리"])
 app.include_router(settings_routes.router, prefix="/api/settings", tags=["Settings"])
+app.include_router(styles.router, prefix="/api/styles", tags=["스타일 프리셋"])
 app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
 
 

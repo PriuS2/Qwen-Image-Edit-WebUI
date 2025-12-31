@@ -8,7 +8,7 @@ from typing import Optional, List, Any
 from sqlalchemy import select, update, delete, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.models import History, Gallery, Job, Setting, JobStatus
+from db.models import History, Gallery, Job, Setting, JobStatus, StylePreset
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -286,4 +286,111 @@ async def delete_all_settings(db: AsyncSession) -> int:
     """모든 설정 삭제"""
     result = await db.execute(delete(Setting))
     return result.rowcount
+
+
+# ═══════════════════════════════════════════════════════════════
+# StylePreset CRUD
+# ═══════════════════════════════════════════════════════════════
+
+async def create_style_preset(
+    db: AsyncSession,
+    name: str,
+    label: str,
+    prompt: str,
+    description: Optional[str] = None,
+    icon: str = "🎨",
+    negative_prompt: str = "",
+    is_builtin: bool = False,
+    is_enabled: bool = True,
+    sort_order: int = 0,
+) -> StylePreset:
+    """스타일 프리셋 생성"""
+    preset = StylePreset(
+        name=name,
+        label=label,
+        description=description,
+        icon=icon,
+        prompt=prompt,
+        negative_prompt=negative_prompt,
+        is_builtin=is_builtin,
+        is_enabled=is_enabled,
+        sort_order=sort_order,
+    )
+    db.add(preset)
+    await db.flush()
+    await db.refresh(preset)
+    return preset
+
+
+async def get_style_preset_by_id(db: AsyncSession, preset_id: str) -> Optional[StylePreset]:
+    """ID로 스타일 프리셋 조회"""
+    result = await db.execute(select(StylePreset).where(StylePreset.id == preset_id))
+    return result.scalar_one_or_none()
+
+
+async def get_style_preset_by_name(db: AsyncSession, name: str) -> Optional[StylePreset]:
+    """이름으로 스타일 프리셋 조회"""
+    result = await db.execute(select(StylePreset).where(StylePreset.name == name))
+    return result.scalar_one_or_none()
+
+
+async def get_all_style_presets(
+    db: AsyncSession,
+    enabled_only: bool = False,
+) -> List[StylePreset]:
+    """모든 스타일 프리셋 조회"""
+    query = select(StylePreset)
+    if enabled_only:
+        query = query.where(StylePreset.is_enabled == True)
+    query = query.order_by(StylePreset.sort_order, StylePreset.created_at)
+    result = await db.execute(query)
+    return list(result.scalars().all())
+
+
+async def update_style_preset(
+    db: AsyncSession,
+    preset_id: str,
+    **kwargs,
+) -> Optional[StylePreset]:
+    """스타일 프리셋 업데이트"""
+    # None 값 필터링
+    update_values = {k: v for k, v in kwargs.items() if v is not None}
+    if not update_values:
+        return await get_style_preset_by_id(db, preset_id)
+    
+    await db.execute(
+        update(StylePreset).where(StylePreset.id == preset_id).values(**update_values)
+    )
+    await db.commit()
+    return await get_style_preset_by_id(db, preset_id)
+
+
+async def delete_style_preset(db: AsyncSession, preset_id: str) -> bool:
+    """스타일 프리셋 삭제"""
+    result = await db.execute(delete(StylePreset).where(StylePreset.id == preset_id))
+    await db.commit()
+    return result.rowcount > 0
+
+
+async def delete_non_builtin_style_presets(db: AsyncSession) -> int:
+    """사용자 정의 스타일 프리셋 모두 삭제"""
+    result = await db.execute(
+        delete(StylePreset).where(StylePreset.is_builtin == False)
+    )
+    return result.rowcount
+
+
+async def style_preset_exists(db: AsyncSession, name: str) -> bool:
+    """스타일 프리셋 이름 존재 여부 확인"""
+    result = await db.execute(
+        select(StylePreset.id).where(StylePreset.name == name)
+    )
+    return result.scalar_one_or_none() is not None
+
+
+async def get_style_presets_count(db: AsyncSession) -> int:
+    """스타일 프리셋 총 개수"""
+    from sqlalchemy import func
+    result = await db.execute(select(func.count(StylePreset.id)))
+    return result.scalar() or 0
 

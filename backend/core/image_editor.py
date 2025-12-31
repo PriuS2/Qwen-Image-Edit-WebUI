@@ -26,17 +26,45 @@ from config import get_settings
 settings = get_settings()
 
 
-# 스타일 프리셋
-STYLE_PRESETS = {
-    "ghibli": "Transform this image into Studio Ghibli animation style with soft colors and dreamy atmosphere",
-    "anime": "Convert this image to anime style with clean lines and vibrant colors",
-    "realistic": "Make this image more photorealistic with natural lighting and textures",
-    "oil_painting": "Transform this image into an oil painting style with visible brush strokes",
-    "watercolor": "Convert this image to watercolor painting style with soft, flowing colors",
-    "sketch": "Transform this image into a pencil sketch with detailed line work",
-    "cyberpunk": "Transform this image into cyberpunk style with neon colors and futuristic elements",
-    "vintage": "Apply vintage film photography style with warm tones and film grain",
-}
+# 스타일 프리셋 캐시 (DB에서 로드)
+_style_presets_cache: dict = {}
+_cache_loaded: bool = False
+
+
+async def get_style_presets() -> dict:
+    """
+    DB에서 스타일 프리셋 로드 (캐시 사용)
+    
+    Returns:
+        dict: {style_name: {"prompt": str, "negative_prompt": str}}
+    """
+    global _style_presets_cache, _cache_loaded
+    
+    if _cache_loaded:
+        return _style_presets_cache
+    
+    from db.database import AsyncSessionLocal
+    from db import crud
+    
+    async with AsyncSessionLocal() as db:
+        presets = await crud.get_all_style_presets(db, enabled_only=True)
+        _style_presets_cache = {
+            p.name: {
+                "prompt": p.prompt,
+                "negative_prompt": p.negative_prompt or "",
+            }
+            for p in presets
+        }
+        _cache_loaded = True
+    
+    return _style_presets_cache
+
+
+def invalidate_style_cache():
+    """스타일 캐시 무효화 (스타일 업데이트 시 호출)"""
+    global _style_presets_cache, _cache_loaded
+    _style_presets_cache = {}
+    _cache_loaded = False
 
 
 class ImageEditor:
@@ -206,10 +234,17 @@ class ImageEditor:
         Returns:
             EditResult: 편집 결과
         """
+        # DB에서 스타일 프리셋 로드
+        style_presets = await get_style_presets()
+        
         # 스타일 프롬프트 구성
-        if style.lower() in STYLE_PRESETS:
-            prompt = STYLE_PRESETS[style.lower()]
+        negative_prompt = ""
+        if style.lower() in style_presets:
+            style_data = style_presets[style.lower()]
+            prompt = style_data["prompt"]
+            negative_prompt = style_data.get("negative_prompt", "")
         else:
+            # 커스텀 프롬프트로 사용
             prompt = style
         
         if additional_prompt:
@@ -221,6 +256,7 @@ class ImageEditor:
         
         params = EditParams(
             prompt=prompt,
+            negative_prompt=negative_prompt if negative_prompt else " ",
             num_inference_steps=app_settings.edit_defaults.num_inference_steps,
             true_cfg_scale=app_settings.edit_defaults.true_cfg_scale * intensity,
             guidance_scale=app_settings.edit_defaults.guidance_scale,
