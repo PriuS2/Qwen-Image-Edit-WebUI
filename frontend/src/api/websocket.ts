@@ -39,6 +39,11 @@ export class JobProgressWebSocket {
     }
 
     this.ws.onmessage = (event) => {
+      // Ignore ping/pong messages
+      if (event.data === 'pong' || event.data === 'ping') {
+        return
+      }
+      
       try {
         const data: ProgressMessage = JSON.parse(event.data)
         this.onProgress(data)
@@ -48,7 +53,7 @@ export class JobProgressWebSocket {
           this.close()
         }
       } catch (e) {
-        console.error('[WebSocket] Failed to parse message:', e)
+        console.error('[WebSocket] Failed to parse message:', e, 'Raw data:', event.data)
       }
     }
 

@@ -231,6 +231,8 @@ export const useEditStore = defineStore('edit', () => {
     wsConnection = createJobProgressSocket(
       jobIdValue,
       (message: ProgressMessage) => {
+        console.log('[EditStore] WebSocket message:', message)
+        
         progress.value = message.progress
         jobStatus.value = {
           job_id: message.job_id,
@@ -241,6 +243,7 @@ export const useEditStore = defineStore('edit', () => {
         }
 
         if (message.status === 'completed' && message.result) {
+          console.log('[EditStore] Completed! Result image:', message.result.image)
           resultImage.value = message.result.image
           isProcessing.value = false
           ElMessage.success('이미지 편집이 완료되었습니다.')
@@ -252,12 +255,19 @@ export const useEditStore = defineStore('edit', () => {
       },
       {
         onError: () => {
+          console.warn('[EditStore] WebSocket error, falling back to polling')
           error.value = 'WebSocket 연결 오류'
           // Fallback to polling
           startPolling(jobIdValue)
         },
         onClose: () => {
+          console.log('[EditStore] WebSocket closed, isProcessing:', isProcessing.value)
           wsConnection = null
+          // If still processing when socket closes unexpectedly, try polling
+          if (isProcessing.value && !error.value) {
+            console.log('[EditStore] Socket closed while processing, starting polling fallback')
+            startPolling(jobIdValue)
+          }
         }
       }
     )
@@ -275,13 +285,18 @@ export const useEditStore = defineStore('edit', () => {
 
   function startPolling(jobIdValue: string): void {
     stopPolling()
+    console.log('[EditStore] Starting polling for job:', jobIdValue)
+    
     pollingInterval = window.setInterval(async () => {
       try {
         const status = await editApi.getJobStatus(jobIdValue)
+        console.log('[EditStore] Polling status:', status)
+        
         progress.value = status.progress
         jobStatus.value = status
 
         if (status.status === 'completed' && status.result) {
+          console.log('[EditStore] Polling completed! Result image:', status.result.image)
           resultImage.value = status.result.image
           isProcessing.value = false
           ElMessage.success('이미지 편집이 완료되었습니다.')
@@ -293,7 +308,7 @@ export const useEditStore = defineStore('edit', () => {
           stopPolling()
         }
       } catch (err) {
-        console.error('Polling error:', err)
+        console.error('[EditStore] Polling error:', err)
       }
     }, 1000)
   }
