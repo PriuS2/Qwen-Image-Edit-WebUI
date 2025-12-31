@@ -139,6 +139,11 @@ export const useEditStore = defineStore('edit', () => {
       return false
     }
 
+    // 이전 결과 초기화
+    resultImage.value = null
+    jobStatus.value = null
+    jobId.value = null
+    
     isProcessing.value = true
     error.value = null
     progress.value = 0
@@ -195,6 +200,11 @@ export const useEditStore = defineStore('edit', () => {
       return false
     }
 
+    // 이전 결과 초기화
+    resultImage.value = null
+    jobStatus.value = null
+    jobId.value = null
+    
     isProcessing.value = true
     error.value = null
     progress.value = 0
