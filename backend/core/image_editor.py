@@ -82,17 +82,19 @@ class ImageEditor:
         settings_manager = await get_settings_manager()
         settings_manager.update_activity()
         
-        # 이미지 로드
+        # 진행률 시작
         if progress_callback:
-            progress_callback(5)
+            progress_callback(0)
         
+        # 이미지 로드
         image = get_image_from_source(image_source)
         
         # 시드 설정
         seed = params.seed if params.seed >= 0 else random.randint(0, 2**32 - 1)
         
+        # 이미지 로드 완료, 편집 시작 준비
         if progress_callback:
-            progress_callback(10)
+            progress_callback(5)
         
         # 편집 실행
         result_image = await self._run_pipeline(
@@ -102,10 +104,7 @@ class ImageEditor:
             progress_callback=progress_callback,
         )
         
-        if progress_callback:
-            progress_callback(90)
-        
-        # 결과 저장 및 반환
+        # 결과 저장 및 반환 (85% ~ 100%)
         return await self._save_and_return(
             original_image=image,
             result_image=result_image,
@@ -146,8 +145,9 @@ class ImageEditor:
         settings_manager = await get_settings_manager()
         settings_manager.update_activity()
         
+        # 진행률 시작
         if progress_callback:
-            progress_callback(5)
+            progress_callback(0)
         
         # 이미지들 로드
         images = [get_image_from_source(src) for src in image_sources[:3]]
@@ -155,8 +155,9 @@ class ImageEditor:
         # 시드 설정
         seed = params.seed if params.seed >= 0 else random.randint(0, 2**32 - 1)
         
+        # 이미지 로드 완료, 편집 시작 준비
         if progress_callback:
-            progress_callback(10)
+            progress_callback(5)
         
         # 편집 실행
         result_image = await self._run_pipeline(
@@ -166,10 +167,7 @@ class ImageEditor:
             progress_callback=progress_callback,
         )
         
-        if progress_callback:
-            progress_callback(90)
-        
-        # 결과 저장 및 반환
+        # 결과 저장 및 반환 (85% ~ 100%)
         return await self._save_and_return(
             original_image=images[0],
             result_image=result_image,
@@ -248,6 +246,22 @@ class ImageEditor:
         import torch
         
         pipeline = self._model_manager.pipeline
+        total_steps = params.num_inference_steps
+        
+        # 진행률 상태를 저장하기 위한 컨테이너
+        progress_state = {"last_progress": 5}
+        
+        # Step 콜백 함수 (실제 진행률 업데이트)
+        def step_callback(pipe, step_index, timestep, callback_kwargs):
+            if progress_callback:
+                # 5% ~ 85% 범위에서 step에 따라 진행률 계산
+                # (0-5%: 이미지 로드, 85-100%: 저장)
+                # step_index는 0부터 시작, +1 해서 완료된 step 기준으로 계산
+                step_progress = 5 + int(((step_index + 1) / total_steps) * 80)
+                if step_progress > progress_state["last_progress"]:
+                    progress_state["last_progress"] = step_progress
+                    progress_callback(step_progress)
+            return callback_kwargs
         
         # 입력 구성
         inputs = {
@@ -259,6 +273,7 @@ class ImageEditor:
             "guidance_scale": params.guidance_scale,
             "generator": torch.manual_seed(seed),
             "num_images_per_prompt": 1,
+            "callback_on_step_end": step_callback,
         }
         
         # 비동기로 실행
@@ -269,14 +284,10 @@ class ImageEditor:
                 output = pipeline(**inputs)
                 return output.images[0]
         
-        # 진행률 시뮬레이션 (실제 콜백이 어려우므로)
-        if progress_callback:
-            total_steps = params.num_inference_steps
-            for i in range(10, 90, 10):
-                await asyncio.sleep(0.1)
-                progress_callback(i)
-        
         result = await loop.run_in_executor(None, run_inference)
+        
+        if progress_callback:
+            progress_callback(85)
         
         return result
     
