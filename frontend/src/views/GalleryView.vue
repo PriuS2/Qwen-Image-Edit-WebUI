@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGalleryStore } from '@/stores/gallery'
+import { useEditStore } from '@/stores/edit'
 import { galleryApi } from '@/api'
 import GalleryCard from '@/components/gallery/GalleryCard.vue'
 import GalleryModal from '@/components/gallery/GalleryModal.vue'
@@ -10,6 +11,7 @@ import { ElMessageBox } from 'element-plus'
 
 const router = useRouter()
 const galleryStore = useGalleryStore()
+const editStore = useEditStore()
 
 // Modal state
 const modalVisible = ref(false)
@@ -67,10 +69,26 @@ const handleDelete = async (itemId?: string) => {
   }
 }
 
-const handleReEdit = () => {
+const handleReEdit = async () => {
   if (galleryStore.currentItem) {
     modalVisible.value = false
-    router.push('/edit')
+    
+    // 편집된 이미지 URL 또는 원본 이미지 URL 사용
+    const imageUrl = galleryStore.compareData?.edited_url || galleryStore.currentItem.image_url
+    
+    // editStore에 이미지 설정
+    const success = await editStore.setImageFromUrl(imageUrl)
+    
+    if (success) {
+      // 이전 프롬프트 설정 (있으면)
+      if (galleryStore.currentItem.metadata?.prompt) {
+        editStore.updateParams({
+          prompt: galleryStore.currentItem.metadata.prompt
+        })
+      }
+      
+      router.push('/edit')
+    }
   }
 }
 

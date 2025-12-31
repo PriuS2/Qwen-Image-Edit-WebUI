@@ -112,6 +112,30 @@ export const useEditStore = defineStore('edit', () => {
     }
   }
 
+  async function setImageFromUrl(imageUrl: string): Promise<boolean> {
+    try {
+      // URL에서 이미지 fetch
+      const response = await fetch(imageUrl)
+      if (!response.ok) {
+        throw new Error('Failed to fetch image')
+      }
+      
+      const blob = await response.blob()
+      const fileName = imageUrl.split('/').pop() || `image-${Date.now()}.png`
+      const file = new File([blob], fileName, { type: blob.type })
+      
+      // 기존 이미지 초기화 후 새 이미지 설정
+      clearImage()
+      addImages([file])
+      
+      return true
+    } catch (err) {
+      console.error('Failed to load image from URL:', err)
+      ElMessage.error('이미지를 불러오는데 실패했습니다.')
+      return false
+    }
+  }
+
   function updateParams(newParams: Partial<EditParams>): void {
     params.value = { ...params.value, ...newParams }
   }
@@ -397,6 +421,7 @@ export const useEditStore = defineStore('edit', () => {
     imageCount,
     // Actions
     setImage,
+    setImageFromUrl,
     clearImage,
     addImages,
     removeImage,
