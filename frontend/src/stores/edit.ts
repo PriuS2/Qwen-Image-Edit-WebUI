@@ -237,10 +237,17 @@ export const useEditStore = defineStore('edit', () => {
 
   function connectWebSocket(jobIdValue: string): void {
     disconnectWebSocket()
+    stopPolling()
 
     wsConnection = createJobProgressSocket(
       jobIdValue,
       (message: ProgressMessage) => {
+        // 현재 작업의 메시지인지 확인
+        if (message.job_id !== jobId.value) {
+          console.log('[EditStore] Ignoring message for different job:', message.job_id)
+          return
+        }
+        
         console.log('[EditStore] WebSocket message:', message)
         
         progress.value = message.progress
@@ -308,9 +315,21 @@ export const useEditStore = defineStore('edit', () => {
     console.log('[EditStore] Starting polling for job:', jobIdValue)
     
     pollingInterval = window.setInterval(async () => {
+      // 현재 작업인지 확인
+      if (jobIdValue !== jobId.value) {
+        console.log('[EditStore] Stopping polling for old job:', jobIdValue)
+        stopPolling()
+        return
+      }
+      
       try {
         const status = await editApi.getJobStatus(jobIdValue)
         console.log('[EditStore] Polling status:', status)
+        
+        // 다시 한번 현재 작업인지 확인 (비동기 호출 후)
+        if (jobIdValue !== jobId.value) {
+          return
+        }
         
         progress.value = status.progress
         jobStatus.value = status
