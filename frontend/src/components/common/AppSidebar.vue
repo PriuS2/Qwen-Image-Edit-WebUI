@@ -84,73 +84,116 @@ const toggleCollapse = () => {
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .sidebar {
-  @apply w-56 bg-white border-r border-gray-200 flex flex-col transition-all duration-300;
+  width: 14rem;
+  background-color: white;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s;
 }
 
 .sidebar.is-collapsed {
-  @apply w-16;
+  width: 4rem;
 }
 
 .menu-item {
-  @apply w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all text-left
-         text-gray-600 hover:bg-gray-50 hover:text-gray-900;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  text-align: left;
+  color: #4b5563;
+}
+
+.menu-item:hover {
+  background-color: #f9fafb;
+  color: #111827;
 }
 
 .menu-item.is-active {
-  @apply bg-primary-50 text-primary-600 font-medium;
+  background-color: #f0f9ff;
+  color: #0284c7;
+  font-weight: 500;
 }
 
 .menu-icon {
-  @apply w-5 h-5 flex-shrink-0;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
 }
 
 .menu-text {
-  @apply flex flex-col overflow-hidden;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .menu-label {
-  @apply text-sm;
+  font-size: 0.875rem;
 }
 
 .menu-desc {
-  @apply text-xs text-primary-400;
+  font-size: 0.75rem;
+  color: #38bdf8;
 }
 
 .sidebar.is-collapsed .menu-item {
-  @apply justify-center px-0;
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .collapse-toggle {
-  @apply px-2 py-2 border-t border-gray-100;
+  padding: 0.5rem;
+  border-top: 1px solid #f3f4f6;
 }
 
 .toggle-btn {
-  @apply w-full p-2 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 
-         flex items-center justify-center transition-colors;
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+  background-color: #f3f4f6;
+  color: #4b5563;
 }
 
 .sidebar-footer {
-  @apply p-4 border-t border-gray-100;
+  padding: 1rem;
+  border-top: 1px solid #f3f4f6;
 }
 
 /* Mobile responsive */
 @media (max-width: 768px) {
   .sidebar {
-    @apply w-16;
+    width: 4rem;
   }
   
   .menu-text {
-    @apply hidden;
+    display: none;
   }
   
   .menu-item {
-    @apply justify-center px-0;
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
   }
   
   .sidebar-footer,
   .collapse-toggle {
-    @apply hidden;
+    display: none;
   }
 }
 </style>

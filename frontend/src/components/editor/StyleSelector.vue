@@ -62,41 +62,80 @@ const selectStyle = (style: StyleType) => {
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .style-selector {
-  @apply space-y-3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .label {
-  @apply block text-sm font-medium text-gray-700;
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
 }
 
 .style-grid {
-  @apply grid grid-cols-2 sm:grid-cols-4 gap-3;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .style-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .style-card {
-  @apply flex flex-col items-center p-4 rounded-xl border-2 border-gray-200 
-         bg-white hover:border-primary-300 hover:bg-primary-50/30 
-         transition-all cursor-pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid #e5e7eb;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.style-card:hover {
+  border-color: #7dd3fc;
+  background-color: rgba(240, 249, 255, 0.3);
 }
 
 .style-card.is-selected {
-  @apply border-primary-500 bg-primary-50 ring-2 ring-primary-200;
+  border-color: #0ea5e9;
+  background-color: #f0f9ff;
+  box-shadow: 0 0 0 2px #bae6fd;
 }
 
 .style-card.is-disabled {
-  @apply opacity-50 cursor-not-allowed hover:border-gray-200 hover:bg-white;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.style-card.is-disabled:hover {
+  border-color: #e5e7eb;
+  background-color: white;
 }
 
 .style-icon {
-  @apply text-3xl mb-2;
+  font-size: 1.875rem;
+  margin-bottom: 0.5rem;
 }
 
 .style-label {
-  @apply text-sm font-medium text-gray-800;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1f2937;
 }
 
 .style-desc {
-  @apply text-xs text-gray-500 mt-0.5;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.125rem;
 }
 </style>

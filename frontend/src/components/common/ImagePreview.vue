@@ -19,7 +19,7 @@ const hasImage = computed(() => !!props.src)
       <div class="placeholder">
         <el-skeleton animated>
           <template #template>
-            <el-skeleton-item variant="image" class="w-full h-full" />
+            <el-skeleton-item variant="image" style="width: 100%; height: 100%;" />
           </template>
         </el-skeleton>
       </div>
@@ -33,24 +33,53 @@ const hasImage = computed(() => !!props.src)
     <!-- Placeholder -->
     <template v-else>
       <div class="placeholder">
-        <Picture class="w-12 h-12 text-gray-300 mb-2" />
-        <p class="text-gray-400 text-sm">{{ placeholder || '이미지가 없습니다' }}</p>
+        <Picture class="placeholder-icon" />
+        <p class="placeholder-text">{{ placeholder || '이미지가 없습니다' }}</p>
       </div>
     </template>
   </div>
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .image-preview {
-  @apply relative w-full aspect-square border border-gray-200 rounded-xl 
-         flex items-center justify-center overflow-hidden bg-gray-50;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: #f9fafb;
 }
 
 .preview-image {
-  @apply w-full h-full object-contain;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .placeholder {
-  @apply flex flex-col items-center justify-center w-full h-full;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.placeholder-icon {
+  width: 3rem;
+  height: 3rem;
+  color: #d1d5db;
+  margin-bottom: 0.5rem;
+}
+
+.placeholder-text {
+  color: #9ca3af;
+  font-size: 0.875rem;
 }
 </style>

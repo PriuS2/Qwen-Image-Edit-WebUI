@@ -62,52 +62,92 @@ const navigateTo = (path: string) => {
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .app-header {
-  @apply bg-white border-b border-gray-200 px-4 md:px-6 py-3 
-         flex items-center justify-between shadow-sm;
+  background-color: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+@media (min-width: 768px) {
+  .app-header {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
 }
 
 .header-left {
-  @apply flex items-center gap-3;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .logo-icon {
-  @apply text-2xl;
+  font-size: 1.5rem;
 }
 
 .logo-text {
-  @apply text-lg md:text-xl font-bold text-gray-800 hidden sm:block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .logo-text {
+    display: block;
+  }
 }
 
 .header-right {
-  @apply flex items-center gap-4 md:gap-6;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
 }
 
 .model-status {
-  @apply hidden md:flex items-center gap-2 text-sm;
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+@media (min-width: 768px) {
+  .model-status {
+    display: flex;
+  }
 }
 
 .status-dot {
-  @apply w-2.5 h-2.5 rounded-full;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 9999px;
 }
 
 .status-dot.is-loaded {
-  @apply bg-green-500;
+  background-color: #22c55e;
 }
 
 .status-dot.is-unloaded {
-  @apply bg-gray-400;
+  background-color: #9ca3af;
 }
 
 .status-text {
-  @apply text-gray-600;
+  color: #4b5563;
 }
 
 .vram-text {
-  @apply text-gray-400;
+  color: #9ca3af;
 }
 
 .quick-actions {
-  @apply flex items-center gap-2;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 </style>

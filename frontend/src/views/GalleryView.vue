@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGalleryStore } from '@/stores/gallery'
-import { useEditStore } from '@/stores/edit'
 import { galleryApi } from '@/api'
 import GalleryCard from '@/components/gallery/GalleryCard.vue'
 import GalleryModal from '@/components/gallery/GalleryModal.vue'
@@ -11,7 +10,6 @@ import { ElMessageBox } from 'element-plus'
 
 const router = useRouter()
 const galleryStore = useGalleryStore()
-const editStore = useEditStore()
 
 // Modal state
 const modalVisible = ref(false)
@@ -71,8 +69,6 @@ const handleDelete = async (itemId?: string) => {
 
 const handleReEdit = () => {
   if (galleryStore.currentItem) {
-    // Navigate to edit page with the image
-    // In a real implementation, you'd load the image into the edit store
     modalVisible.value = false
     router.push('/edit')
   }
@@ -90,9 +86,9 @@ const toggleFavoritesOnly = () => {
 <template>
   <div class="gallery-view">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-gray-800">갤러리</h2>
-      <div class="flex gap-2">
+    <div class="page-header">
+      <h2 class="page-title">갤러리</h2>
+      <div class="header-actions">
         <el-button
           :icon="galleryStore.favoritesOnly ? StarFilled : Star"
           :type="galleryStore.favoritesOnly ? 'primary' : 'default'"
@@ -112,13 +108,13 @@ const toggleFavoritesOnly = () => {
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="!galleryStore.hasItems" class="empty-state">
-      <div class="text-center py-16">
-        <div class="text-6xl mb-4">🖼️</div>
-        <h3 class="text-xl font-medium text-gray-700 mb-2">
+    <div v-else-if="!galleryStore.hasItems" class="empty-state card">
+      <div class="empty-content">
+        <div class="empty-icon">🖼️</div>
+        <h3 class="empty-title">
           {{ galleryStore.favoritesOnly ? '즐겨찾기한 이미지가 없습니다' : '갤러리가 비어있습니다' }}
         </h3>
-        <p class="text-gray-500">이미지를 편집하면 여기에 저장됩니다.</p>
+        <p class="empty-desc">이미지를 편집하면 여기에 저장됩니다.</p>
       </div>
     </div>
 
@@ -160,23 +156,88 @@ const toggleFavoritesOnly = () => {
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .gallery-view {
-  @apply max-w-6xl mx-auto;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .loading-container {
-  @apply py-8;
+  padding: 2rem 0;
+}
+
+.card {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border: 1px solid #f3f4f6;
+  padding: 1rem;
 }
 
 .empty-state {
-  @apply card;
+  padding: 4rem 1rem;
+}
+
+.empty-content {
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 3.75rem;
+  margin-bottom: 1rem;
+}
+
+.empty-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.empty-desc {
+  color: #6b7280;
 }
 
 .gallery-grid {
-  @apply grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .gallery-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .gallery-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .pagination-container {
-  @apply flex justify-center mt-8;
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
 }
 </style>

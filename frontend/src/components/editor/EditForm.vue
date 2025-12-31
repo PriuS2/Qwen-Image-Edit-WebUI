@@ -61,9 +61,9 @@ const randomizeSeed = () => {
 </script>
 
 <template>
-  <div class="edit-form space-y-6">
+  <div class="edit-form">
     <!-- Prompts -->
-    <div class="space-y-4">
+    <div class="prompts-section">
       <PromptInput
         v-model="prompt"
         label="프롬프트"
@@ -82,8 +82,8 @@ const randomizeSeed = () => {
     </div>
 
     <!-- Parameters Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="space-y-4">
+    <div class="params-grid">
+      <div class="params-column">
         <ParameterSlider
           v-model="numInferenceSteps"
           label="추론 스텝"
@@ -103,7 +103,7 @@ const randomizeSeed = () => {
         />
       </div>
 
-      <div class="space-y-4">
+      <div class="params-column">
         <ParameterSlider
           v-model="trueCfgScale"
           label="True CFG 스케일"
@@ -114,20 +114,20 @@ const randomizeSeed = () => {
         />
 
         <!-- Seed -->
-        <div class="space-y-2">
-          <div class="flex justify-between items-center">
-            <label class="text-sm font-medium text-gray-700">시드</label>
-            <span class="text-sm text-primary-600 font-medium">
+        <div class="seed-section">
+          <div class="seed-header">
+            <label class="seed-label">시드</label>
+            <span class="seed-value">
               {{ seed === -1 ? '랜덤' : seed }}
             </span>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="seed-input">
             <el-input-number
               v-model="seed"
               :min="-1"
               :max="2147483647"
               :disabled="disabled"
-              class="flex-1"
+              class="seed-number"
               controls-position="right"
             />
             <el-button
@@ -142,8 +142,8 @@ const randomizeSeed = () => {
     </div>
 
     <!-- Number of images -->
-    <div class="space-y-2">
-      <label class="text-sm font-medium text-gray-700">생성 이미지 수</label>
+    <div class="num-images-section">
+      <label class="num-images-label">생성 이미지 수</label>
       <el-radio-group v-model="numImages" :disabled="disabled">
         <el-radio-button :value="1">1장</el-radio-button>
         <el-radio-button :value="2">2장</el-radio-button>
@@ -155,4 +155,81 @@ const randomizeSeed = () => {
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.prompts-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.params-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .params-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.params-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.seed-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.seed-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.seed-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.seed-value {
+  font-size: 0.875rem;
+  color: #0284c7;
+  font-weight: 500;
+}
+
+.seed-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.seed-number {
+  flex: 1;
+}
+
+.num-images-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.num-images-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
 </style>

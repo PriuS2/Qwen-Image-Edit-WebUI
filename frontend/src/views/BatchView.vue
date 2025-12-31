@@ -59,21 +59,21 @@ const handleReset = () => {
 
 const getStatusClass = (status: string) => {
   switch (status) {
-    case 'completed': return 'bg-green-500'
-    case 'processing': return 'bg-blue-500'
-    case 'failed': return 'bg-red-500'
-    default: return 'bg-gray-400'
+    case 'completed': return 'status-completed'
+    case 'processing': return 'status-processing'
+    case 'failed': return 'status-failed'
+    default: return 'status-pending'
   }
 }
 </script>
 
 <template>
   <div class="batch-view">
-    <h2 class="text-2xl font-bold text-gray-800 mb-6">배치 처리</h2>
+    <h2 class="page-title">배치 처리</h2>
 
     <!-- Upload Area -->
     <div 
-      class="card mb-6"
+      class="card upload-card"
       @drop="handleDrop"
       @dragover="handleDragOver"
     >
@@ -90,16 +90,16 @@ const getStatusClass = (status: string) => {
           class="hidden"
           @change="handleFilesChange"
         />
-        <UploadFilled class="w-10 h-10 text-gray-400 mb-2" />
-        <p class="text-gray-600">이미지를 드래그하거나 클릭하여 업로드</p>
-        <p class="text-gray-400 text-sm mt-1">여러 이미지를 한 번에 선택할 수 있습니다</p>
+        <UploadFilled class="upload-icon" />
+        <p class="upload-text">이미지를 드래그하거나 클릭하여 업로드</p>
+        <p class="upload-hint">여러 이미지를 한 번에 선택할 수 있습니다</p>
       </div>
     </div>
 
     <!-- Image Grid -->
-    <div v-if="batchStore.hasImages" class="card mb-6">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-sm font-medium text-gray-600">
+    <div v-if="batchStore.hasImages" class="card images-card">
+      <div class="images-header">
+        <h3 class="card-title">
           업로드된 이미지 ({{ batchStore.images.length }}개)
         </h3>
         <el-button 
@@ -122,10 +122,7 @@ const getStatusClass = (status: string) => {
             <img :src="image.previewUrl" :alt="image.file.name" />
             
             <!-- Status indicator -->
-            <div 
-              class="status-dot"
-              :class="getStatusClass(image.status)"
-            ></div>
+            <div class="status-dot" :class="getStatusClass(image.status)"></div>
 
             <!-- Remove button -->
             <button
@@ -133,12 +130,12 @@ const getStatusClass = (status: string) => {
               class="remove-btn"
               @click="batchStore.removeImage(image.id)"
             >
-              <Close class="w-3 h-3" />
+              <Close class="remove-icon" />
             </button>
 
             <!-- Progress overlay -->
             <div v-if="image.status === 'processing'" class="progress-overlay">
-              <span class="text-white text-sm font-medium">{{ image.progress }}%</span>
+              <span class="progress-text">{{ image.progress }}%</span>
             </div>
 
             <!-- Completed overlay -->
@@ -155,16 +152,16 @@ const getStatusClass = (status: string) => {
           class="add-more-btn"
           @click="openFilePicker"
         >
-          <span class="text-3xl text-gray-400">+</span>
+          <span class="add-icon">+</span>
         </div>
       </div>
     </div>
 
     <!-- Common Prompt -->
-    <div class="card mb-6">
-      <h3 class="text-sm font-medium text-gray-600 mb-4">공통 설정</h3>
+    <div class="card settings-card">
+      <h3 class="card-title">공통 설정</h3>
       
-      <div class="space-y-4">
+      <div class="settings-content">
         <PromptInput
           :model-value="batchStore.commonParams.prompt"
           @update:model-value="batchStore.updateParams({ prompt: $event })"
@@ -173,7 +170,7 @@ const getStatusClass = (status: string) => {
           :disabled="batchStore.isProcessing"
         />
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="params-grid">
           <ParameterSlider
             :model-value="batchStore.commonParams.num_inference_steps || 20"
             @update:model-value="batchStore.updateParams({ num_inference_steps: $event })"
@@ -196,8 +193,8 @@ const getStatusClass = (status: string) => {
     </div>
 
     <!-- Actions -->
-    <div class="card mb-6">
-      <div class="flex items-center justify-center gap-4">
+    <div class="card action-card">
+      <div class="action-buttons">
         <el-button
           v-if="!batchStore.isProcessing"
           type="primary"
@@ -231,7 +228,7 @@ const getStatusClass = (status: string) => {
 
     <!-- Overall Progress -->
     <div v-if="batchStore.isProcessing" class="card">
-      <h3 class="text-sm font-medium text-gray-600 mb-3">전체 진행 상황</h3>
+      <h3 class="card-title">전체 진행 상황</h3>
       <ProgressBar
         :progress="batchStore.totalProgress"
         :status="batchStore.currentJob?.status"
@@ -242,61 +239,260 @@ const getStatusClass = (status: string) => {
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .batch-view {
-  @apply max-w-6xl mx-auto;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border: 1px solid #f3f4f6;
+  padding: 1rem;
+}
+
+.card-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 0.75rem;
+}
+
+.upload-card {
+  margin-bottom: 1.5rem;
 }
 
 .upload-zone {
-  @apply flex flex-col items-center justify-center py-10 border-2 border-dashed 
-         border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 
-         hover:bg-primary-50/30 transition-all;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem;
+  border: 2px dashed #d1d5db;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.upload-zone:hover {
+  border-color: #38bdf8;
+  background-color: rgba(240, 249, 255, 0.3);
 }
 
 .upload-zone.has-images {
-  @apply py-6;
+  padding: 1.5rem;
+}
+
+.upload-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #9ca3af;
+  margin-bottom: 0.5rem;
+}
+
+.upload-text {
+  color: #4b5563;
+}
+
+.upload-hint {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.hidden {
+  display: none;
+}
+
+.images-card {
+  margin-bottom: 1.5rem;
+}
+
+.images-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
 .image-grid {
-  @apply grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .image-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .image-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
 }
 
 .image-item {
-  @apply text-center;
+  text-align: center;
 }
 
 .image-thumbnail {
-  @apply relative aspect-square rounded-lg overflow-hidden border border-gray-200;
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
 }
 
 .image-thumbnail img {
-  @apply w-full h-full object-cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .status-dot {
-  @apply absolute top-1 left-1 w-2.5 h-2.5 rounded-full;
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 9999px;
+}
+
+.status-pending {
+  background-color: #9ca3af;
+}
+
+.status-processing {
+  background-color: #3b82f6;
+}
+
+.status-completed {
+  background-color: #22c55e;
+}
+
+.status-failed {
+  background-color: #ef4444;
 }
 
 .remove-btn {
-  @apply absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full 
-         hover:bg-red-600 transition-colors;
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  padding: 0.25rem;
+  background-color: #ef4444;
+  color: white;
+  border-radius: 9999px;
+  transition: background-color 0.2s;
+}
+
+.remove-btn:hover {
+  background-color: #dc2626;
+}
+
+.remove-icon {
+  width: 0.75rem;
+  height: 0.75rem;
 }
 
 .progress-overlay {
-  @apply absolute inset-0 bg-black/50 flex items-center justify-center;
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-text {
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .completed-overlay {
-  @apply absolute inset-0 bg-green-500/70 flex items-center justify-center 
-         text-white text-2xl font-bold;
+  position: absolute;
+  inset: 0;
+  background-color: rgba(34, 197, 94, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 
 .image-name {
-  @apply text-xs text-gray-500 mt-1 truncate;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .add-more-btn {
-  @apply aspect-square rounded-lg border-2 border-dashed border-gray-300 
-         flex items-center justify-center cursor-pointer hover:border-primary-400 
-         hover:bg-primary-50/30 transition-all;
+  aspect-ratio: 1;
+  border-radius: 0.5rem;
+  border: 2px dashed #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-more-btn:hover {
+  border-color: #38bdf8;
+  background-color: rgba(240, 249, 255, 0.3);
+}
+
+.add-icon {
+  font-size: 1.875rem;
+  color: #9ca3af;
+}
+
+.settings-card {
+  margin-bottom: 1.5rem;
+}
+
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.params-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .params-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.action-card {
+  margin-bottom: 1.5rem;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
 }
 </style>

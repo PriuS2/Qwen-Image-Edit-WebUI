@@ -75,9 +75,9 @@ const getImageUrl = (path: string) => {
 <template>
   <div class="history-view">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-gray-800">히스토리</h2>
-      <div class="flex gap-2">
+    <div class="page-header">
+      <h2 class="page-title">히스토리</h2>
+      <div class="header-actions">
         <el-select 
           :model-value="historyStore.sessionId" 
           placeholder="세션 선택"
@@ -100,17 +100,17 @@ const getImageUrl = (path: string) => {
 
     <!-- Empty State -->
     <div v-if="!historyStore.hasItems && !historyStore.isLoading" class="empty-state card">
-      <div class="text-center py-16">
-        <div class="text-6xl mb-4">📜</div>
-        <h3 class="text-xl font-medium text-gray-700 mb-2">히스토리가 없습니다</h3>
-        <p class="text-gray-500">이미지를 편집하면 여기에 기록됩니다.</p>
+      <div class="empty-content">
+        <div class="empty-icon">📜</div>
+        <h3 class="empty-title">히스토리가 없습니다</h3>
+        <p class="empty-desc">이미지를 편집하면 여기에 기록됩니다.</p>
       </div>
     </div>
 
     <template v-else>
       <!-- Timeline -->
-      <div class="card mb-6">
-        <h3 class="text-sm font-medium text-gray-600 mb-4">타임라인</h3>
+      <div class="card timeline-card">
+        <h3 class="card-title">타임라인</h3>
         <div class="timeline-container">
           <div class="timeline-scroll">
             <div 
@@ -140,10 +140,10 @@ const getImageUrl = (path: string) => {
       </div>
 
       <!-- Selected Item Details -->
-      <div v-if="selectedItem" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div v-if="selectedItem" class="details-grid">
         <!-- Image Preview -->
         <div class="card">
-          <h3 class="text-sm font-medium text-gray-600 mb-3">이미지</h3>
+          <h3 class="card-title">이미지</h3>
           <div class="image-preview">
             <img 
               :src="getImageUrl(selectedItem.edited_image_path)" 
@@ -155,7 +155,7 @@ const getImageUrl = (path: string) => {
 
         <!-- Details -->
         <div class="card">
-          <h3 class="text-sm font-medium text-gray-600 mb-3">편집 정보</h3>
+          <h3 class="card-title">편집 정보</h3>
           
           <div class="details-list">
             <div class="detail-item">
@@ -185,7 +185,7 @@ const getImageUrl = (path: string) => {
           </div>
 
           <!-- Actions -->
-          <div class="flex justify-center gap-3 mt-6">
+          <div class="detail-actions">
             <el-button
               :icon="Back"
               :disabled="!historyStore.canUndo || historyStore.isLoading"
@@ -212,78 +212,197 @@ const getImageUrl = (path: string) => {
       </div>
 
       <!-- No Selection -->
-      <div v-else class="card">
-        <div class="text-center py-8 text-gray-500">
-          타임라인에서 항목을 선택하세요
-        </div>
+      <div v-else class="card no-selection">
+        <p>타임라인에서 항목을 선택하세요</p>
       </div>
     </template>
   </div>
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .history-view {
-  @apply max-w-6xl mx-auto;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.card {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border: 1px solid #f3f4f6;
+  padding: 1rem;
+}
+
+.card-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 0.75rem;
+}
+
+.empty-state {
+  padding: 4rem 1rem;
+}
+
+.empty-content {
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 3.75rem;
+  margin-bottom: 1rem;
+}
+
+.empty-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.empty-desc {
+  color: #6b7280;
+}
+
+.timeline-card {
+  margin-bottom: 1.5rem;
 }
 
 .timeline-container {
-  @apply overflow-x-auto pb-4;
+  overflow-x: auto;
+  padding-bottom: 1rem;
 }
 
 .timeline-scroll {
-  @apply flex items-center gap-2 min-w-max;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: max-content;
 }
 
 .timeline-item {
-  @apply flex items-center gap-2 cursor-pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
 }
 
 .timeline-thumbnail {
-  @apply w-20 h-20 rounded-lg overflow-hidden border-2 border-transparent 
-         hover:border-primary-300 transition-all;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.timeline-thumbnail:hover {
+  border-color: #7dd3fc;
 }
 
 .timeline-item.is-selected .timeline-thumbnail {
-  @apply border-primary-500 ring-2 ring-primary-200;
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 2px #bae6fd;
 }
 
 .thumbnail-image {
-  @apply w-full h-full object-cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .timeline-info {
-  @apply text-center;
+  text-align: center;
 }
 
 .timeline-label {
-  @apply text-xs text-gray-500;
+  font-size: 0.75rem;
+  color: #6b7280;
 }
 
 .timeline-arrow {
-  @apply w-4 h-4 text-gray-400;
+  width: 1rem;
+  height: 1rem;
+  color: #9ca3af;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .details-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .image-preview {
-  @apply aspect-square bg-gray-100 rounded-lg overflow-hidden;
+  aspect-ratio: 1;
+  background-color: #f3f4f6;
+  border-radius: 0.5rem;
+  overflow: hidden;
 }
 
 .preview-image {
-  @apply w-full h-full object-contain;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .details-list {
-  @apply space-y-3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .detail-item {
-  @apply flex;
+  display: flex;
 }
 
 .detail-label {
-  @apply text-sm text-gray-500 w-24 flex-shrink-0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  width: 6rem;
+  flex-shrink: 0;
 }
 
 .detail-value {
-  @apply text-sm text-gray-800;
+  font-size: 0.875rem;
+  color: #1f2937;
+}
+
+.detail-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.no-selection {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
 }
 </style>

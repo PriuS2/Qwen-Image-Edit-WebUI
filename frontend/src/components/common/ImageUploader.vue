@@ -114,47 +114,108 @@ const clearImage = (e: Event) => {
     <!-- Upload placeholder -->
     <template v-else>
       <div class="upload-placeholder">
-        <UploadFilled class="w-12 h-12 text-gray-400 mb-3" />
-        <p class="text-gray-600 font-medium">이미지를 드래그하거나 클릭하여 업로드</p>
-        <p class="text-gray-400 text-sm mt-1">PNG, JPG, WEBP 지원</p>
+        <UploadFilled class="upload-icon" />
+        <p class="upload-text">이미지를 드래그하거나 클릭하여 업로드</p>
+        <p class="upload-hint">PNG, JPG, WEBP 지원</p>
       </div>
     </template>
   </div>
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .image-uploader {
-  @apply relative w-full aspect-square border-2 border-dashed border-gray-300 rounded-xl 
-         flex items-center justify-center cursor-pointer transition-all overflow-hidden
-         bg-gray-50 hover:border-primary-400 hover:bg-primary-50/30;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px dashed #d1d5db;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  overflow: hidden;
+  background-color: #f9fafb;
+}
+
+.image-uploader:hover {
+  border-color: #38bdf8;
+  background-color: rgba(240, 249, 255, 0.3);
 }
 
 .image-uploader.is-dragging {
-  @apply border-primary-500 bg-primary-50;
+  border-color: #0ea5e9;
+  background-color: #f0f9ff;
 }
 
 .image-uploader.has-image {
-  @apply border-solid border-gray-200;
+  border-style: solid;
+  border-color: #e5e7eb;
 }
 
 .image-uploader.is-disabled {
-  @apply cursor-not-allowed opacity-60;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .preview-container {
-  @apply relative w-full h-full;
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .preview-image {
-  @apply w-full h-full object-contain;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .clear-btn {
-  @apply absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full 
-         hover:bg-red-600 transition-colors shadow-md;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.375rem;
+  background-color: #ef4444;
+  color: white;
+  border-radius: 9999px;
+  transition: background-color 0.2s;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.clear-btn:hover {
+  background-color: #dc2626;
 }
 
 .upload-placeholder {
-  @apply flex flex-col items-center justify-center p-6 text-center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.upload-icon {
+  width: 3rem;
+  height: 3rem;
+  color: #9ca3af;
+  margin-bottom: 0.75rem;
+}
+
+.upload-text {
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.upload-hint {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.hidden {
+  display: none;
 }
 </style>

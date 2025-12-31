@@ -47,30 +47,46 @@ const stepValue = computed(() => props.step || 1)
         :disabled="disabled"
         size="small"
         controls-position="right"
-        class="ml-3 w-24"
+        class="input-number"
       />
     </div>
   </div>
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .parameter-slider {
-  @apply space-y-2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .header {
-  @apply flex justify-between items-center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .label {
-  @apply text-sm font-medium text-gray-700;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
 }
 
 .value {
-  @apply text-sm text-primary-600 font-medium;
+  font-size: 0.875rem;
+  color: #0284c7;
+  font-weight: 500;
 }
 
 .slider-container {
-  @apply flex items-center;
+  display: flex;
+  align-items: center;
+}
+
+.input-number {
+  margin-left: 0.75rem;
+  width: 6rem;
 }
 </style>

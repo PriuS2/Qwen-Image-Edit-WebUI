@@ -26,7 +26,7 @@ const isFavorite = computed(() => props.item.is_favorite)
       
       <!-- Favorite badge -->
       <div v-if="isFavorite" class="favorite-badge">
-        <StarFilled class="w-3 h-3" />
+        <StarFilled class="badge-icon" />
       </div>
     </div>
 
@@ -42,7 +42,7 @@ const isFavorite = computed(() => props.item.is_favorite)
         :icon="isFavorite ? StarFilled : Star"
         size="small"
         text
-        :class="{ 'text-yellow-500': isFavorite }"
+        :class="{ 'favorite-active': isFavorite }"
         @click="emit('favorite')"
         title="즐겨찾기"
       />
@@ -57,7 +57,7 @@ const isFavorite = computed(() => props.item.is_favorite)
         :icon="Delete"
         size="small"
         text
-        class="text-red-500"
+        class="delete-btn"
         @click="emit('delete')"
         title="삭제"
       />
@@ -66,36 +66,84 @@ const isFavorite = computed(() => props.item.is_favorite)
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .gallery-card {
-  @apply bg-white rounded-xl border border-gray-200 overflow-hidden 
-         hover:shadow-lg hover:border-primary-300 transition-all cursor-pointer;
+  background-color: white;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.gallery-card:hover {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  border-color: #7dd3fc;
 }
 
 .thumbnail-container {
-  @apply relative aspect-square bg-gray-100;
+  position: relative;
+  aspect-ratio: 1;
+  background-color: #f3f4f6;
 }
 
 .thumbnail {
-  @apply w-full h-full object-cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .favorite-badge {
-  @apply absolute top-2 right-2 p-1 bg-yellow-500 text-white rounded-full;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem;
+  background-color: #eab308;
+  color: white;
+  border-radius: 9999px;
+}
+
+.badge-icon {
+  width: 0.75rem;
+  height: 0.75rem;
 }
 
 .card-info {
-  @apply p-3;
+  padding: 0.75rem;
 }
 
 .title {
-  @apply text-sm font-medium text-gray-800 truncate;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .prompt {
-  @apply text-xs text-gray-500 truncate mt-1;
+  font-size: 0.75rem;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 0.25rem;
 }
 
 .card-actions {
-  @apply flex justify-center gap-1 py-2 border-t border-gray-100;
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.favorite-active {
+  color: #eab308;
+}
+
+.delete-btn {
+  color: #ef4444;
 }
 </style>

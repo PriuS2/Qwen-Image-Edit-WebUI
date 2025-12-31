@@ -70,13 +70,13 @@ const handleClear = () => {
 
 <template>
   <div class="edit-view">
-    <h2 class="text-2xl font-bold text-gray-800 mb-6">이미지 편집</h2>
+    <h2 class="page-title">이미지 편집</h2>
 
     <!-- Image Preview Area -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="image-grid">
       <!-- Original Image -->
       <div class="card">
-        <h3 class="text-sm font-medium text-gray-600 mb-3">원본 이미지</h3>
+        <h3 class="card-title">원본 이미지</h3>
         <ImageUploader
           :preview-url="editStore.currentImageUrl"
           :disabled="editStore.isProcessing"
@@ -86,9 +86,9 @@ const handleClear = () => {
 
       <!-- Result Image -->
       <div class="card">
-        <div class="flex justify-between items-center mb-3">
-          <h3 class="text-sm font-medium text-gray-600">결과 이미지</h3>
-          <div v-if="editStore.resultImage" class="flex gap-2">
+        <div class="card-header">
+          <h3 class="card-title">결과 이미지</h3>
+          <div v-if="editStore.resultImage" class="card-actions">
             <el-button
               size="small"
               :icon="Download"
@@ -112,7 +112,7 @@ const handleClear = () => {
     </div>
 
     <!-- Edit Form -->
-    <div class="card mb-6">
+    <div class="card form-card">
       <EditForm
         :params="editStore.params"
         :disabled="editStore.isProcessing"
@@ -121,8 +121,8 @@ const handleClear = () => {
     </div>
 
     <!-- Action Buttons -->
-    <div class="card mb-6">
-      <div class="flex items-center justify-center gap-4">
+    <div class="card action-card">
+      <div class="action-buttons">
         <el-button
           :icon="Back"
           :disabled="!historyStore.canUndo || editStore.isProcessing"
@@ -154,13 +154,13 @@ const handleClear = () => {
 
     <!-- Progress Bar -->
     <div v-if="showProgress" class="card">
-      <h3 class="text-sm font-medium text-gray-600 mb-3">진행 상황</h3>
+      <h3 class="card-title">진행 상황</h3>
       <ProgressBar
         :progress="editStore.progress"
         :status="editStore.jobStatus?.status"
         show-text
       />
-      <p v-if="editStore.error" class="text-red-500 text-sm mt-2">
+      <p v-if="editStore.error" class="error-text">
         {{ editStore.error }}
       </p>
     </div>
@@ -168,7 +168,78 @@ const handleClear = () => {
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .edit-view {
-  @apply max-w-6xl mx-auto;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 1.5rem;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .image-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.card {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  border: 1px solid #f3f4f6;
+  padding: 1rem;
+}
+
+.card-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 0.75rem;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.form-card {
+  margin-bottom: 1.5rem;
+}
+
+.action-card {
+  margin-bottom: 1.5rem;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.error-text {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
 }
 </style>

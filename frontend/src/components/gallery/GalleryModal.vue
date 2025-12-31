@@ -6,8 +6,7 @@ import {
   StarFilled, 
   Download, 
   Delete, 
-  Edit,
-  Close
+  Edit
 } from '@element-plus/icons-vue'
 
 const props = defineProps<{
@@ -25,20 +24,14 @@ const emit = defineEmits<{
 }>()
 
 const sliderValue = ref(50)
-const isEditing = ref(false)
-const editTitle = ref('')
-const editDescription = ref('')
 
 const dialogVisible = computed({
   get: () => props.visible,
   set: (value: boolean) => emit('update:visible', value)
 })
 
-watch(() => props.item, (newItem) => {
-  if (newItem) {
-    editTitle.value = newItem.title
-    editDescription.value = newItem.description
-  }
+watch(() => props.item, () => {
+  sliderValue.value = 50
 })
 
 const formatDate = (dateStr: string) => {
@@ -62,11 +55,11 @@ const formatDate = (dateStr: string) => {
             :style="{ clipPath: `inset(0 ${100 - sliderValue}% 0 0)` }"
           >
             <img :src="compareData.original_url" alt="Original" class="compare-image" />
-            <span class="compare-label left">원본</span>
+            <span class="compare-label label-left">원본</span>
           </div>
           <div class="compare-edited">
             <img :src="compareData.edited_url" alt="Edited" class="compare-image" />
-            <span class="compare-label right">편집</span>
+            <span class="compare-label label-right">편집</span>
           </div>
           <input
             v-model="sliderValue"
@@ -89,14 +82,8 @@ const formatDate = (dateStr: string) => {
 
       <!-- Info Section -->
       <div class="info-section">
-        <template v-if="!isEditing">
-          <h3 class="text-lg font-medium text-gray-800 mb-2">{{ item.title || '제목 없음' }}</h3>
-          <p v-if="item.description" class="text-gray-600 mb-4">{{ item.description }}</p>
-        </template>
-        <template v-else>
-          <el-input v-model="editTitle" placeholder="제목" class="mb-2" />
-          <el-input v-model="editDescription" type="textarea" placeholder="설명" :rows="2" />
-        </template>
+        <h3 class="info-title">{{ item.title || '제목 없음' }}</h3>
+        <p v-if="item.description" class="info-desc">{{ item.description }}</p>
 
         <div class="meta-info">
           <div class="meta-item">
@@ -121,11 +108,11 @@ const formatDate = (dateStr: string) => {
 
     <!-- Actions -->
     <template #footer>
-      <div class="flex justify-between">
-        <div class="flex gap-2">
+      <div class="footer-actions">
+        <div class="left-actions">
           <el-button
             :icon="item?.is_favorite ? StarFilled : Star"
-            :class="{ 'text-yellow-500': item?.is_favorite }"
+            :class="{ 'favorite-active': item?.is_favorite }"
             @click="emit('favorite')"
           >
             즐겨찾기
@@ -137,7 +124,7 @@ const formatDate = (dateStr: string) => {
             재편집
           </el-button>
         </div>
-        <div class="flex gap-2">
+        <div class="right-actions">
           <el-button type="danger" :icon="Delete" @click="emit('delete')">
             삭제
           </el-button>
@@ -151,72 +138,142 @@ const formatDate = (dateStr: string) => {
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .compare-container {
-  @apply mb-6;
+  margin-bottom: 1.5rem;
 }
 
 .compare-slider {
-  @apply relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  background-color: #f3f4f6;
+  border-radius: 0.5rem;
+  overflow: hidden;
 }
 
 .compare-original,
 .compare-edited {
-  @apply absolute inset-0;
+  position: absolute;
+  inset: 0;
 }
 
 .compare-original {
-  @apply z-10;
+  z-index: 10;
 }
 
 .compare-image {
-  @apply w-full h-full object-contain;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .compare-label {
-  @apply absolute bottom-4 px-3 py-1 bg-black/50 text-white text-sm rounded;
+  position: absolute;
+  bottom: 1rem;
+  padding: 0.25rem 0.75rem;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 0.875rem;
+  border-radius: 0.25rem;
 }
 
-.compare-label.left {
-  @apply left-4;
+.label-left {
+  left: 1rem;
 }
 
-.compare-label.right {
-  @apply right-4;
+.label-right {
+  right: 1rem;
 }
 
 .slider-input {
-  @apply absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-20;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: ew-resize;
+  z-index: 20;
 }
 
 .slider-handle {
-  @apply absolute top-0 bottom-0 w-1 bg-white shadow-lg z-10 -translate-x-1/2;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0.25rem;
+  background-color: white;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  z-index: 10;
+  transform: translateX(-50%);
 }
 
 .single-image-container {
-  @apply w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-6;
+  width: 100%;
+  aspect-ratio: 1;
+  background-color: #f3f4f6;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
 }
 
 .single-image {
-  @apply w-full h-full object-contain;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .info-section {
-  @apply space-y-4;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.info-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.info-desc {
+  color: #4b5563;
 }
 
 .meta-info {
-  @apply grid grid-cols-2 gap-2 text-sm;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  font-size: 0.875rem;
 }
 
 .meta-item {
-  @apply flex gap-2;
+  display: flex;
+  gap: 0.5rem;
 }
 
 .meta-label {
-  @apply text-gray-500;
+  color: #6b7280;
 }
 
 .meta-value {
-  @apply text-gray-800 truncate;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footer-actions {
+  display: flex;
+  justify-content: space-between;
+}
+
+.left-actions,
+.right-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.favorite-active {
+  color: #eab308;
 }
 </style>

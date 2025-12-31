@@ -25,11 +25,11 @@ const progressText = computed(() => {
 const progressClass = computed(() => {
   switch (props.status) {
     case 'completed':
-      return 'bg-green-500'
+      return 'fill-success'
     case 'failed':
-      return 'bg-red-500'
+      return 'fill-error'
     default:
-      return 'bg-primary-500'
+      return 'fill-primary'
   }
 })
 </script>
@@ -48,19 +48,45 @@ const progressClass = computed(() => {
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .progress-container {
-  @apply w-full flex items-center gap-3;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .progress-bar {
-  @apply flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden;
+  flex: 1;
+  height: 0.625rem;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  overflow: hidden;
 }
 
 .progress-fill {
-  @apply h-full rounded-full transition-all duration-300 ease-out;
+  height: 100%;
+  border-radius: 9999px;
+  transition: all 0.3s ease-out;
+}
+
+.fill-primary {
+  background-color: #0ea5e9;
+}
+
+.fill-success {
+  background-color: #22c55e;
+}
+
+.fill-error {
+  background-color: #ef4444;
 }
 
 .progress-text {
-  @apply text-sm text-gray-600 min-w-[80px] text-right;
+  font-size: 0.875rem;
+  color: #4b5563;
+  min-width: 80px;
+  text-align: right;
 }
 </style>

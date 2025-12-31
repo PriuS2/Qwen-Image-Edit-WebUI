@@ -34,11 +34,18 @@ const inputValue = computed({
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
 .prompt-input {
-  @apply space-y-2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .label {
-  @apply block text-sm font-medium text-gray-700;
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
 }
 </style>

@@ -18,11 +18,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-gray-50">
+  <div class="app-container">
     <AppHeader />
-    <div class="flex flex-1">
+    <div class="app-body">
       <AppSidebar />
-      <main class="flex-1 p-6 overflow-auto">
+      <main class="app-main">
         <router-view />
       </main>
     </div>
@@ -30,5 +30,23 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* Layout specific styles */
+@reference "tailwindcss";
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f9fafb;
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+}
+
+.app-main {
+  flex: 1;
+  padding: 1.5rem;
+  overflow: auto;
+}
 </style>
