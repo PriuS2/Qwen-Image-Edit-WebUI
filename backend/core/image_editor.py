@@ -244,12 +244,16 @@ class ImageEditor:
     ) -> Image.Image:
         """파이프라인 실행"""
         import torch
+        from concurrent.futures import ThreadPoolExecutor
         
         pipeline = self._model_manager.pipeline
         total_steps = params.num_inference_steps
         
         # 진행률 상태를 저장하기 위한 컨테이너
         progress_state = {"last_progress": 5}
+        
+        # 이벤트 루프 참조 저장 (스레드에서 사용)
+        loop = asyncio.get_event_loop()
         
         # Step 콜백 함수 (실제 진행률 업데이트)
         def step_callback(pipe, step_index, timestep, callback_kwargs):
@@ -260,7 +264,12 @@ class ImageEditor:
                 step_progress = 5 + int(((step_index + 1) / total_steps) * 80)
                 if step_progress > progress_state["last_progress"]:
                     progress_state["last_progress"] = step_progress
-                    progress_callback(step_progress)
+                    # 스레드에서 안전하게 비동기 콜백 호출
+                    loop.call_soon_threadsafe(
+                        lambda p=step_progress: asyncio.ensure_future(
+                            _safe_progress_callback(progress_callback, p)
+                        )
+                    )
             return callback_kwargs
         
         # 입력 구성
@@ -276,9 +285,6 @@ class ImageEditor:
             "callback_on_step_end": step_callback,
         }
         
-        # 비동기로 실행
-        loop = asyncio.get_event_loop()
-        
         def run_inference():
             with torch.inference_mode():
                 output = pipeline(**inputs)
@@ -290,6 +296,16 @@ class ImageEditor:
             progress_callback(85)
         
         return result
+
+
+async def _safe_progress_callback(callback: Callable[[int], None], progress: int) -> None:
+    """진행률 콜백을 안전하게 호출"""
+    try:
+        result = callback(progress)
+        if asyncio.iscoroutine(result):
+            await result
+    except Exception as e:
+        print(f"Progress callback error: {e}")
     
     async def _save_and_return(
         self,

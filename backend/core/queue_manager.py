@@ -214,15 +214,17 @@ class QueueManager:
         
         params = EditParams(**input_data.get("params", {}))
         
+        # 진행률 콜백 (비동기 함수 직접 전달)
+        async def progress_callback(p: int):
+            await self._broadcast_progress(job_id, p)
+        
         result = await editor.edit_single(
             image_source=input_data["image"],
             params=params,
             response_format=input_data.get("response_format", "url"),
             session_id=input_data.get("session_id"),
             save_to_gallery=input_data.get("save_to_gallery", True),
-            progress_callback=lambda p: asyncio.create_task(
-                self._broadcast_progress(job_id, p)
-            ),
+            progress_callback=progress_callback,
         )
         
         return result.model_dump()
@@ -236,15 +238,17 @@ class QueueManager:
         
         params = EditParams(**input_data.get("params", {}))
         
+        # 진행률 콜백 (비동기 함수 직접 전달)
+        async def progress_callback(p: int):
+            await self._broadcast_progress(job_id, p)
+        
         result = await editor.edit_multi(
             image_sources=input_data["images"],
             params=params,
             response_format=input_data.get("response_format", "url"),
             session_id=input_data.get("session_id"),
             save_to_gallery=input_data.get("save_to_gallery", True),
-            progress_callback=lambda p: asyncio.create_task(
-                self._broadcast_progress(job_id, p)
-            ),
+            progress_callback=progress_callback,
         )
         
         return result.model_dump()
@@ -255,6 +259,10 @@ class QueueManager:
         
         editor = get_image_editor()
         
+        # 진행률 콜백 (비동기 함수 직접 전달)
+        async def progress_callback(p: int):
+            await self._broadcast_progress(job_id, p)
+        
         result = await editor.style_transfer(
             image_source=input_data["image"],
             style=input_data["style"],
@@ -263,9 +271,7 @@ class QueueManager:
             response_format=input_data.get("response_format", "url"),
             session_id=input_data.get("session_id"),
             save_to_gallery=input_data.get("save_to_gallery", True),
-            progress_callback=lambda p: asyncio.create_task(
-                self._broadcast_progress(job_id, p)
-            ),
+            progress_callback=progress_callback,
         )
         
         return result.model_dump()
