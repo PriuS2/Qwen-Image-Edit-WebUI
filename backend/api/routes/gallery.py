@@ -44,7 +44,7 @@ async def list_gallery(
                 "title": item.title,
                 "description": item.description,
                 "is_favorite": item.is_favorite,
-                "metadata": item.metadata,
+                "metadata": item.image_metadata,
                 "created_at": item.created_at.isoformat() if item.created_at else None,
             })
         
@@ -82,7 +82,7 @@ async def get_gallery_item(
                 "title": item.title,
                 "description": item.description,
                 "is_favorite": item.is_favorite,
-                "metadata": item.metadata,
+                "metadata": item.image_metadata,
                 "history_id": item.history_id,
                 "created_at": item.created_at.isoformat() if item.created_at else None,
             },
@@ -115,7 +115,7 @@ async def compare_images(
             "data": {
                 "original_url": image_to_url(item.original_image_path),
                 "edited_url": image_to_url(item.image_path),
-                "metadata": item.metadata,
+                "metadata": item.image_metadata,
             },
         }
 

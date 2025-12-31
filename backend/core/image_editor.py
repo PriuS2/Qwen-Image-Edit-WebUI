@@ -340,7 +340,7 @@ class ImageEditor:
                         thumbnail_path=thumbnail_path,
                         original_image_path=original_path,
                         history_id=history_id,
-                        metadata={
+                        image_metadata={
                             "width": width,
                             "height": height,
                             "prompt": params.prompt,

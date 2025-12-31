@@ -58,7 +58,7 @@ class Gallery(Base):
     image_path = Column(String(500), nullable=False)
     thumbnail_path = Column(String(500), nullable=True)
     original_image_path = Column(String(500), nullable=True)  # 비교용 원본 경로
-    metadata = Column(SQLiteJSON, nullable=True)
+    image_metadata = Column(SQLiteJSON, nullable=True)
     title = Column(String(200), nullable=True)
     description = Column(Text, nullable=True)
     is_favorite = Column(Boolean, default=False)

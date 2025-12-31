@@ -80,7 +80,7 @@ async def create_gallery(
     thumbnail_path: Optional[str] = None,
     original_image_path: Optional[str] = None,
     history_id: Optional[str] = None,
-    metadata: Optional[dict] = None,
+    image_metadata: Optional[dict] = None,
     title: Optional[str] = None,
     description: Optional[str] = None,
 ) -> Gallery:
@@ -90,7 +90,7 @@ async def create_gallery(
         thumbnail_path=thumbnail_path,
         original_image_path=original_image_path,
         history_id=history_id,
-        metadata=metadata,
+        image_metadata=image_metadata,
         title=title,
         description=description,
     )
